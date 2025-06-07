@@ -1,27 +1,94 @@
 <div class="todo-container">
   <h1>My Todo List</h1>
   
+  <!-- Error Message -->
+  @if (error) {
+    <div class="error-message">
+      <span>{{ error }}</span>
+      <button class="error-close" (click)="clearError()">&times;</button>
+    </div>
+  }
+  
+  <!-- Add Todo Section -->
   <div class="add-todo">
     <input 
       type="text" 
       [(ngModel)]="newTodoTitle" 
       placeholder="Add a new task..."
       (keyup.enter)="addTodo()"
+      [disabled]="isAdding"
+      class="todo-input"
     >
-    <button class="add-task-btn" (click)="addTodo()">Add Task</button>
+    <button 
+      class="add-task-btn" 
+      (click)="addTodo()"
+      [disabled]="isAdding || !newTodoTitle.trim()"
+      [class.loading]="isAdding"
+    >
+      @if (!isAdding) {
+        <span>Add Task</span>
+      }
+      @if (isAdding) {
+        <span class="spinner">Adding...</span>
+      }
+    </button>
   </div>
 
-  <ul class="todo-list">
-    <li *ngFor="let todo of todos" [class.completed]="todo.completed">
-      <div class="todo-item">
-        <input 
-          type="checkbox" 
-          [checked]="todo.completed"
-          (change)="toggleTodo(todo)"
-        >
-        <span>{{ todo.title }}</span>
-        <button class="delete-btn" (click)="deleteTodo(todo.id!)">Delete</button>
-      </div>
-    </li>
-  </ul>
+  <!-- Loading State -->
+  @if (isLoading) {
+    <div class="loading-state">
+      <div class="spinner-large"></div>
+      <p>Loading todos...</p>
+    </div>
+  }
+
+  <!-- Refresh Button -->
+  <div class="actions">
+    <button class="refresh-btn" (click)="refreshTodos()" [disabled]="isLoading">
+      🔄 Refresh
+    </button>
+  </div>
+
+  <!-- Todo List -->
+  @if (!isLoading) {
+    <ul class="todo-list">
+      @for (todo of todos; track todo.id || $index) {
+        <li [class.completed]="todo.completed"
+            [class.operation-in-progress]="isOperationInProgress(todo.id!)">
+          <div class="todo-item">
+            <input 
+              type="checkbox" 
+              [checked]="todo.completed"
+              (change)="toggleTodo(todo)"
+              [disabled]="isOperationInProgress(todo.id!)"
+              class="todo-checkbox"
+            >
+            <span class="todo-text" [class.updating]="updatingIds.has(todo.id!)">
+              {{ todo.title }}
+            </span>
+            <button 
+              class="delete-btn" 
+              (click)="deleteTodo(todo.id!)"
+              [disabled]="isOperationInProgress(todo.id!)"
+              [class.deleting]="deletingIds.has(todo.id!)"
+            >
+              @if (!deletingIds.has(todo.id!)) {
+                <span>Delete</span>
+              }
+              @if (deletingIds.has(todo.id!)) {
+                <span class="spinner-small">⟳</span>
+              }
+            </button>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+
+  <!-- Empty State -->
+  @if (!isLoading && todos.length === 0) {
+    <div class="empty-state">
+      <p>No todos yet. Add one above! 📝</p>
+    </div>
+  }
 </div>

@@ -14,18 +14,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-@app.get("/api/todos")
-def get_todos2(todo_name: str = Query(None, description = 'optional query')):
-    if todo_name is not None:
-        return {
-            "status": "success",
-            'message': "Here all of your todos" + todo_name
-        }
-    else:
-        return {
-            "status": "success",
-            'message': "Here all of your todo for "
-        }
 
 # Todo model
 class Todo(BaseModel):
@@ -33,8 +21,22 @@ class Todo(BaseModel):
     title: str
     completed: bool = False
 
+# User model
+class User(BaseModel):
+    id: Optional[int] = None
+    username: str
+    email: str
+    password_hash: Optional[str] = None
+    age: Optional[int] = None
+    health_goals: Optional[List[str]] = None  # Array of health goals
+    preferences: Optional[dict] = None  # JSON object for preferences
+    created_at: Optional[str] = None
+
 # Fallback in-memory storage if Supabase isn't configured
 todos: List[Todo] = []
+users: List[User] = []
+
+# ============= TODO ENDPOINTS =============
 
 @app.get("/api/todos")
 async def get_todos():
@@ -47,7 +49,6 @@ async def get_todos():
         print(f"Supabase error: {str(e)}")
         return todos
     
-
 
 @app.post("/api/todos")
 async def create_todo(todo: Todo):
@@ -115,3 +116,120 @@ async def delete_todo(todo_id: int):
             if todo.id == todo_id:
                 return todos.pop(index)
         raise HTTPException(status_code=404, detail="Todo not found")
+
+# ============= USER ENDPOINTS =============
+
+@app.get("/api/users")
+async def get_users():
+    if supabase is None:
+        return users
+    try:
+        response = supabase.table('users').select("*").execute()
+        return response.data
+    except Exception as e:
+        print(f"Supabase error: {str(e)}")
+        return users
+
+@app.get("/api/users/{user_id}")
+async def get_user(user_id: int):
+    if supabase is None:
+        for user in users:
+            if user.id == user_id:
+                return user
+        raise HTTPException(status_code=404, detail="User not found")
+    try:
+        response = supabase.table('users').select("*").eq("id", user_id).execute()
+        
+        if not response.data:
+            raise HTTPException(status_code=404, detail="User not found")
+            
+        return response.data[0]
+    except Exception as e:
+        print(f"Supabase error: {str(e)}")
+        for user in users:
+            if user.id == user_id:
+                return user
+        raise HTTPException(status_code=404, detail="User not found")
+
+@app.post("/api/users")
+async def create_user(user: User):
+    if supabase is None:
+        user.id = len(users) + 1
+        users.append(user)
+        return user
+    try:
+        response = supabase.table('users').insert({
+            "username": user.username,
+            "email": user.email,
+            "password_hash": user.password_hash,
+            "age": user.age,
+            "health_goals": user.health_goals,
+            "preferences": user.preferences
+        }).execute()
+        return response.data[0]
+    except Exception as e:
+        print(f"Supabase error: {str(e)}")
+        user.id = len(users) + 1
+        users.append(user)
+        return user
+
+@app.put("/api/users/{user_id}")
+async def update_user(user_id: int, updated_user: User):
+    if supabase is None:
+        for user in users:
+            if user.id == user_id:
+                user.username = updated_user.username
+                user.email = updated_user.email
+                user.password_hash = updated_user.password_hash
+                user.age = updated_user.age
+                user.health_goals = updated_user.health_goals
+                user.preferences = updated_user.preferences
+                return user
+        raise HTTPException(status_code=404, detail="User not found")
+    try:
+        response = supabase.table('users').update({
+            "username": updated_user.username,
+            "email": updated_user.email,
+            "password_hash": updated_user.password_hash,
+            "age": updated_user.age,
+            "health_goals": updated_user.health_goals,
+            "preferences": updated_user.preferences
+        }).eq("id", user_id).execute()
+        
+        if not response.data:
+            raise HTTPException(status_code=404, detail="User not found")
+            
+        return response.data[0]
+    except Exception as e:
+        print(f"Supabase error: {str(e)}")
+        for user in users:
+            if user.id == user_id:
+                user.username = updated_user.username
+                user.email = updated_user.email
+                user.password_hash = updated_user.password_hash
+                user.age = updated_user.age
+                user.health_goals = updated_user.health_goals
+                user.preferences = updated_user.preferences
+                return user
+        raise HTTPException(status_code=404, detail="User not found")
+
+@app.delete("/api/users/{user_id}")
+async def delete_user(user_id: int):
+    if supabase is None:
+        for index, user in enumerate(users):
+            if user.id == user_id:
+                return users.pop(index)
+        raise HTTPException(status_code=404, detail="User not found")
+    try:
+        response = supabase.table('users').delete().eq("id", user_id).execute()
+        
+        if not response.data:
+            raise HTTPException(status_code=404, detail="User not found")
+            
+        return {"message": "User deleted successfully"}
+    except Exception as e:
+        print(f"Supabase error: {str(e)}")
+        for index, user in enumerate(users):
+            if user.id == user_id:
+                return users.pop(index)
+        raise HTTPException(status_code=404, detail="User not found")
