@@ -107,49 +107,90 @@ async def signup(user_data: UserCreate):
                 print(f"Supabase table error: {str(supabase_error)}")
                 print("Falling back to in-memory storage for this session")
         
-        # Always use in-memory storage for now (since we disabled Supabase)
-        print("Using in-memory storage")
-        # Check if user already exists in memory
-        for user in users:
-            if user["email"] == user_data.email:
-                print(f"User already exists: {user_data.email}")
+        if supabase is None:
+            print("Using in-memory storage")
+            # Check if user already exists in memory
+            for user in users:
+                if user["email"] == user_data.email:
+                    print(f"User already exists: {user_data.email}")
+                    raise HTTPException(status_code=400, detail="Email already registered")
+            
+            print("Hashing password...")
+            # Create new user in memory
+            hashed_password = hash_password(user_data.password)
+            print("Password hashed successfully")
+            
+            new_user = {
+                "id": len(users) + 1,
+                "email": user_data.email,
+                "full_name": user_data.full_name,
+                "password": hashed_password,
+                "created_at": datetime.utcnow()
+            }
+            users.append(new_user)
+            print(f"User created with ID: {new_user['id']}")
+            
+            # Create token
+            print("Creating access token...")
+            access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+            access_token = create_access_token(
+                data={"sub": str(new_user["id"])}, expires_delta=access_token_expires
+            )
+            print("Access token created successfully")
+            
+            user_response = User(
+                id=new_user["id"],
+                email=new_user["email"],
+                full_name=new_user["full_name"],
+                created_at=new_user["created_at"]
+            )
+            
+            token_response = Token(access_token=access_token, token_type="bearer", user=user_response)
+            print("Signup successful!")
+            return token_response
+        
+        # Supabase path
+        print("Using Supabase storage")
+        try:
+            # Check if user already exists in Supabase
+            existing_user = supabase.table('users').select("*").eq("email", user_data.email).execute()
+            if existing_user.data:
                 raise HTTPException(status_code=400, detail="Email already registered")
-        
-        print("Hashing password...")
-        # Create new user in memory
-        hashed_password = hash_password(user_data.password)
-        print("Password hashed successfully")
-        
-        new_user = {
-            "id": len(users) + 1,
-            "email": user_data.email,
-            "full_name": user_data.full_name,
-            "password": hashed_password,
-            "created_at": datetime.utcnow()
-        }
-        users.append(new_user)
-        print(f"User created with ID: {new_user['id']}")
-        
-        # Create token
-        print("Creating access token...")
-        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        access_token = create_access_token(
-            data={"sub": str(new_user["id"])}, expires_delta=access_token_expires
-        )
-        print("Access token created successfully")
-        
-        print("Creating user response...")
-        user_response = User(
-            id=new_user["id"],
-            email=new_user["email"],
-            full_name=new_user["full_name"],
-            created_at=new_user["created_at"]
-        )
-        print("User response created successfully")
-        
-        token_response = Token(access_token=access_token, token_type="bearer", user=user_response)
-        print("Signup successful!")
-        return token_response
+            
+            # Hash password and create user
+            hashed_password = hash_password(user_data.password)
+            response = supabase.table('users').insert({
+                "email": user_data.email,
+                "username": user_data.full_name,  # Map full_name to username
+                "password_hash": hashed_password  # Map password to password_hash
+            }).execute()
+            
+            if not response.data:
+                raise HTTPException(status_code=500, detail="Failed to create user")
+            
+            created_user = response.data[0]
+            print(f"User created in Supabase with ID: {created_user['id']}")
+            
+            # Create token
+            access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+            access_token = create_access_token(
+                data={"sub": str(created_user["id"])}, expires_delta=access_token_expires
+            )
+            
+            user_response = User(
+                id=created_user["id"],
+                email=created_user["email"],
+                full_name=created_user.get("username", user_data.full_name),  # Map username back to full_name
+                created_at=created_user.get("created_at")
+            )
+            
+            return Token(access_token=access_token, token_type="bearer", user=user_response)
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(f"Supabase error: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
         
     except HTTPException:
         # Re-raise HTTP exceptions (like 400 for duplicate email)
@@ -198,7 +239,7 @@ async def login(user_credentials: UserLogin):
         
         user = response.data[0]
         
-        if not verify_password(user_credentials.password, user["password"]):
+        if not verify_password(user_credentials.password, user["password_hash"]):
             raise HTTPException(status_code=401, detail="Incorrect email or password")
         
         # Create token
@@ -210,7 +251,7 @@ async def login(user_credentials: UserLogin):
         user_response = User(
             id=user["id"],
             email=user["email"],
-            full_name=user["full_name"],
+            full_name=user.get("username", ""),  # Map username to full_name
             created_at=user.get("created_at")
         )
         
@@ -244,13 +285,31 @@ async def get_current_user_info(current_user_id: int = Depends(get_current_user)
         return User(
             id=user["id"],
             email=user["email"],
-            full_name=user["full_name"],
+            full_name=user.get("username", ""),  # Map username to full_name
             created_at=user.get("created_at")
         )
         
     except Exception as e:
         print(f"Supabase error: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
+
+# Debug endpoint to list all users (for development only)
+@app.get("/api/debug/users")
+async def list_all_users():
+    """Debug endpoint to list all users in memory storage"""
+    if supabase is None:
+        # Return users without passwords for security
+        safe_users = []
+        for user in users:
+            safe_users.append({
+                "id": user["id"],
+                "email": user["email"],
+                "full_name": user["full_name"],
+                "created_at": user["created_at"]
+            })
+        return {"users": safe_users, "total": len(safe_users)}
+    else:
+        return {"message": "This endpoint only works with in-memory storage"}
 
 # Fallback in-memory storage if Supabase isn't configured
 todos: List[Todo] = []
@@ -294,15 +353,22 @@ async def update_todo(todo_id: int, updated_todo: Todo, current_user_id: int = D
     if supabase is None:
         for todo in todos:
             if todo.id == todo_id and todo.user_id == current_user_id:
-                todo.title = updated_todo.title
-                todo.completed = updated_todo.completed
+                # Only update the fields that are provided
+                if updated_todo.title is not None:
+                    todo.title = updated_todo.title
+                if updated_todo.completed is not None:
+                    todo.completed = updated_todo.completed
                 return todo
         raise HTTPException(status_code=404, detail="Todo not found")
     try:
-        response = supabase.table('todos').update({
-            "title": updated_todo.title,
-            "completed": updated_todo.completed
-        }).eq("id", todo_id).eq("user_id", current_user_id).execute()
+        # Only update the fields that are provided
+        update_data = {}
+        if updated_todo.title is not None:
+            update_data["title"] = updated_todo.title
+        if updated_todo.completed is not None:
+            update_data["completed"] = updated_todo.completed
+            
+        response = supabase.table('todos').update(update_data).eq("id", todo_id).eq("user_id", current_user_id).execute()
         
         if not response.data:
             raise HTTPException(status_code=404, detail="Todo not found")
@@ -310,12 +376,7 @@ async def update_todo(todo_id: int, updated_todo: Todo, current_user_id: int = D
         return response.data[0]
     except Exception as e:
         print(f"Supabase error: {str(e)}")
-        for todo in todos:
-            if todo.id == todo_id and todo.user_id == current_user_id:
-                todo.title = updated_todo.title
-                todo.completed = updated_todo.completed
-                return todo
-        raise HTTPException(status_code=404, detail="Todo not found")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @app.delete("/api/todos/{todo_id}")
 async def delete_todo(todo_id: int, current_user_id: int = Depends(get_current_user)):

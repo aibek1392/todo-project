@@ -5,7 +5,7 @@ import { authAPI } from '../services/api';
 // Initial state
 const initialState: AuthState = {
   user: null,
-  token: localStorage.getItem('token'),
+  token: localStorage.getItem('token'), // Load token immediately
   isLoading: false,
   error: null,
 };
@@ -45,6 +45,26 @@ export const getCurrentUser = createAsyncThunk(
       return user;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.detail || 'Failed to get user');
+    }
+  }
+);
+
+export const initializeAuth = createAsyncThunk(
+  'auth/initializeAuth',
+  async (_, { dispatch, getState, rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      if (token) {
+        // Token exists, try to get current user
+        const user = await authAPI.getCurrentUser();
+        return { token, user };
+      }
+      return null;
+    } catch (error: any) {
+      // Token is invalid, remove it
+      localStorage.removeItem('token');
+      return rejectWithValue('Invalid token');
     }
   }
 );
@@ -118,6 +138,25 @@ const authSlice = createSlice({
         state.token = null;
         state.user = null;
         localStorage.removeItem('token');
+      });
+
+    // Initialize auth
+    builder
+      .addCase(initializeAuth.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(initializeAuth.fulfilled, (state, action) => {
+        state.isLoading = false;
+        if (action.payload) {
+          state.token = action.payload.token;
+          state.user = action.payload.user;
+        }
+      })
+      .addCase(initializeAuth.rejected, (state, action) => {
+        state.isLoading = false;
+        state.token = null;
+        state.user = null;
+        state.error = null; // Don't show error for invalid token on refresh
       });
   },
 });
