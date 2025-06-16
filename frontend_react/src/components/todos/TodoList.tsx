@@ -279,7 +279,7 @@ const TodoList: React.FC = () => {
         <TodoContainer>
           {error && (
             <ErrorMessage>
-              {error}
+              {typeof error === 'string' ? error : 'An error occurred'}
               <button 
                 onClick={() => dispatch(clearError())}
                 style={{ 
