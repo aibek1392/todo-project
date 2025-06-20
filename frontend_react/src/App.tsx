@@ -8,6 +8,9 @@ import LandingPage from './components/common/LandingPage';
 import LoginForm from './components/auth/LoginForm';
 import SignupForm from './components/auth/SignupForm';
 import TodoList from './components/todos/TodoList';
+import OnboardingForm from './components/onboarding/OnboardingForm';
+import TestProfileUpdate from './components/TestProfileUpdate';
+import DebugAuth from './components/DebugAuth';
 import './App.css';
 
 const App: React.FC = () => {
@@ -22,15 +25,27 @@ const App: React.FC = () => {
               <Route path="/login" element={<LoginForm />} />
               <Route path="/signup" element={<SignupForm />} />
               
+              {/* Onboarding route */}
+              <Route path="/onboarding" element={<OnboardingForm />} />
+              
+              {/* Test route for API testing */}
+              <Route path="/test-profile" element={<TestProfileUpdate />} />
+              
+              {/* Debug route */}
+              <Route path="/debug" element={<DebugAuth />} />
+              
               {/* Protected routes */}
               <Route 
-                path="/todos" 
+                path="/meals" 
                 element={
                   <ProtectedRoute>
                     <TodoList />
                   </ProtectedRoute>
                 } 
               />
+              
+              {/* Legacy redirect */}
+              <Route path="/todos" element={<Navigate to="/meals" replace />} />
               
               {/* Catch all route */}
               <Route path="*" element={<Navigate to="/" replace />} />
