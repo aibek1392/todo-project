@@ -6,7 +6,6 @@ import AuthInitializer from './components/common/AuthInitializer';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import LandingPage from './components/common/LandingPage';
 import LoginForm from './components/auth/LoginForm';
-import SignupForm from './components/auth/SignupForm';
 import TodoList from './components/todos/TodoList';
 import OnboardingForm from './components/onboarding/OnboardingForm';
 import TestProfileUpdate from './components/TestProfileUpdate';
@@ -23,7 +22,6 @@ const App: React.FC = () => {
               {/* Public routes */}
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<LoginForm />} />
-              <Route path="/signup" element={<SignupForm />} />
               
               {/* Onboarding route */}
               <Route path="/onboarding" element={<OnboardingForm />} />
@@ -46,6 +44,9 @@ const App: React.FC = () => {
               
               {/* Legacy redirect */}
               <Route path="/todos" element={<Navigate to="/meals" replace />} />
+              
+              {/* Legacy signup redirect */}
+              <Route path="/signup" element={<Navigate to="/onboarding" replace />} />
               
               {/* Catch all route */}
               <Route path="*" element={<Navigate to="/" replace />} />

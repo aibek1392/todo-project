@@ -19,10 +19,72 @@ export const FormWrapper = styled.div`
 `;
 
 export const Header = styled.div`
-  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   padding: 30px;
   text-align: center;
+  position: relative;
+`;
+
+export const CloseButton = styled.button`
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: white;
+  font-size: 20px;
+  font-weight: 300;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: scale(1.05) rotate(90deg);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  }
+  
+  &:active {
+    transform: scale(0.95) rotate(90deg);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  &::before {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 2px;
+    background: currentColor;
+    border-radius: 1px;
+    transform: rotate(45deg);
+    transition: all 0.3s ease;
+  }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 2px;
+    background: currentColor;
+    border-radius: 1px;
+    transform: rotate(-45deg);
+    transition: all 0.3s ease;
+  }
+  
+  &:hover::before,
+  &:hover::after {
+    width: 16px;
+    background: rgba(255, 255, 255, 0.9);
+  }
 `;
 
 export const Title = styled.h1`
@@ -66,8 +128,8 @@ export const StepDot = styled.div<{ active: boolean; completed: boolean }>`
   height: 12px;
   border-radius: 50%;
   background: ${props => 
-    props.completed ? '#4CAF50' : 
-    props.active ? '#667eea' : '#dee2e6'
+    props.completed ? '#667eea' : 
+    props.active ? '#764ba2' : '#dee2e6'
   };
   transition: all 0.3s ease;
 `;
@@ -369,7 +431,7 @@ export const SuccessMessage = styled.div`
   padding: 60px 40px;
   
   h2 {
-    color: #4CAF50;
+    color: #667eea;
     margin-bottom: 16px;
     font-size: 28px;
   }

@@ -17,13 +17,6 @@ export interface LoginCredentials {
   password: string;
 }
 
-export interface SignupCredentials {
-  email: string;
-  password: string;
-  full_name: string;
-  confirmPassword: string;
-}
-
 export interface AuthResponse {
   access_token: string;
   token_type: string;

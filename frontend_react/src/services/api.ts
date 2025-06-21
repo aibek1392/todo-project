@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { AuthResponse, LoginCredentials, SignupCredentials, User } from '../types/auth';
+import { AuthResponse, LoginCredentials, User } from '../types/auth';
 import { Todo } from '../types/todo';
 import { OnboardingFormData } from '../types/onboarding';
 
@@ -21,11 +21,6 @@ api.interceptors.request.use((config) => {
 
 // Auth API
 export const authAPI = {
-  signup: async (credentials: Omit<SignupCredentials, 'confirmPassword'>): Promise<AuthResponse> => {
-    const response = await api.post('/auth/signup', credentials);
-    return response.data;
-  },
-
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     const response = await api.post('/auth/login', credentials);
     return response.data;

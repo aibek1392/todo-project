@@ -36,7 +36,8 @@ import {
   Button,
   LoadingSpinner,
   SuccessMessage,
-  ErrorMessage
+  ErrorMessage,
+  CloseButton
 } from './OnboardingForm.styles';
 
 const OnboardingForm: React.FC = () => {
@@ -102,6 +103,10 @@ const OnboardingForm: React.FC = () => {
 
   const handleStartPlanning = () => {
     navigate('/meals');
+  };
+
+  const handleClose = () => {
+    navigate('/');
   };
 
   const renderCurrentStep = () => {
@@ -173,6 +178,7 @@ const OnboardingForm: React.FC = () => {
     <OnboardingContainer>
       <FormWrapper>
         <Header>
+          <CloseButton onClick={handleClose} title="Close and return to main page" />
           <Title>MealMind Setup</Title>
           <Subtitle>
             Step {currentStep} of {totalSteps}: {getStepTitle()}
@@ -198,13 +204,16 @@ const OnboardingForm: React.FC = () => {
         </FormContent>
 
         <ButtonGroup>
-          <Button
-            variant="outline"
-            onClick={handlePrevious}
-            disabled={currentStep === 1}
-          >
-            Back
-          </Button>
+          {currentStep > 1 && (
+            <Button
+              variant="outline"
+              onClick={handlePrevious}
+            >
+              Back
+            </Button>
+          )}
+          
+          {currentStep === 1 && <div />}
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {currentStep < totalSteps ? (

@@ -177,7 +177,7 @@ const LoginForm: React.FC = () => {
         </Form>
 
         <LinkText>
-          Don't have an account? <Link to="/signup">Sign up</Link>
+          Don't have an account? <Link to="/onboarding">Create Account</Link>
         </LinkText>
       </FormWrapper>
     </Container>

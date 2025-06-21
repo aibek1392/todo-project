@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { AuthState, LoginCredentials, SignupCredentials, User } from '../types/auth';
+import { AuthState, LoginCredentials, User } from '../types/auth';
 import { authAPI } from '../services/api';
 
 // Initial state
@@ -11,19 +11,6 @@ const initialState: AuthState = {
 };
 
 // Async thunks
-export const signup = createAsyncThunk(
-  'auth/signup',
-  async (credentials: Omit<SignupCredentials, 'confirmPassword'>, { rejectWithValue }) => {
-    try {
-      const response = await authAPI.signup(credentials);
-      localStorage.setItem('token', response.access_token);
-      return response;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.detail || 'Signup failed');
-    }
-  }
-);
-
 export const login = createAsyncThunk(
   'auth/login',
   async (credentials: LoginCredentials, { rejectWithValue }) => {
@@ -88,23 +75,6 @@ const authSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    // Signup
-    builder
-      .addCase(signup.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(signup.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.user = action.payload.user;
-        state.token = action.payload.access_token;
-        state.error = null;
-      })
-      .addCase(signup.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-      });
-
     // Login
     builder
       .addCase(login.pending, (state) => {
