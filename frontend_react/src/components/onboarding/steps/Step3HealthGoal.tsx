@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../../store';
 import { updateHealthGoal } from '../../../store/onboardingSlice';
-import { HealthGoal } from '../../../types/onboarding';
+import { HealthGoal, HEALTH_GOALS_NORMAL, HEALTH_GOALS_CRITICAL } from '../../../types/onboarding';
 import {
   StepTitle,
   StepDescription,
@@ -16,24 +16,14 @@ import {
   ErrorMessage
 } from '../OnboardingForm.styles';
 
-interface Step2Props {
+interface Step3Props {
   onNext: () => void;
 }
 
-const healthGoalOptions = [
-  { value: 'Lose weight', label: 'Lose weight', emoji: '⚖️' },
-  { value: 'Maintain weight', label: 'Maintain weight', emoji: '🎯' },
-  { value: 'Gain weight', label: 'Gain weight', emoji: '💪' },
-  { value: 'Improve digestion', label: 'Improve digestion', emoji: '🌱' },
-  { value: 'Manage blood sugar', label: 'Manage blood sugar', emoji: '📊' },
-  { value: 'Lower cholesterol', label: 'Lower cholesterol', emoji: '❤️' },
-  { value: 'Increase energy', label: 'Increase energy', emoji: '⚡' },
-  { value: 'Custom', label: 'Custom goal', emoji: '✨' }
-];
-
-const Step2HealthGoal: React.FC<Step2Props> = ({ onNext }) => {
+const Step3HealthGoal: React.FC<Step3Props> = ({ onNext }) => {
   const dispatch = useDispatch();
   const healthGoal = useSelector((state: RootState) => state.onboarding.formData.healthGoal);
+  const medicalConditions = useSelector((state: RootState) => state.onboarding.formData.medicalConditions);
 
   const {
     register,
@@ -48,6 +38,42 @@ const Step2HealthGoal: React.FC<Step2Props> = ({ onNext }) => {
   });
 
   const selectedGoal = watch('goal');
+
+  // Determine if user has critical conditions that limit health goal options
+  const hasCriticalConditions = useMemo(() => {
+    const conditions = medicalConditions.conditions || [];
+    return conditions.some(condition => {
+      if (condition === 'IBD (Ulcerative Colitis, Crohn\'s)') {
+        // Check for UC in flare or Crohn's
+        return (medicalConditions.ibdType === 'Ulcerative colitis' && medicalConditions.ucCondition === 'In flare') ||
+               medicalConditions.ibdType === 'Crohns';
+      }
+      return condition === 'IBS' && conditions.includes('Severe IBS'); // Assuming severe IBS is marked somehow
+    });
+  }, [medicalConditions]);
+
+  // Get appropriate health goal options based on medical conditions
+  const healthGoalOptions = useMemo(() => {
+    const baseOptions = hasCriticalConditions ? HEALTH_GOALS_CRITICAL : HEALTH_GOALS_NORMAL;
+    return baseOptions.map(goal => ({
+      value: goal,
+      label: goal,
+      emoji: getEmojiForGoal(goal)
+    }));
+  }, [hasCriticalConditions]);
+
+  function getEmojiForGoal(goal: string): string {
+    switch (goal) {
+      case 'Lose weight': return '⚖️';
+      case 'Maintain weight': return '🎯';
+      case 'Gain weight': return '💪';
+      case 'Lower cholesterol': return '❤️';
+      case 'Increase energy': return '⚡';
+      case 'Improve digestion': return '🌱';
+      case 'Other': return '✨';
+      default: return '🎯';
+    }
+  }
 
   const onSubmit = (data: any) => {
     dispatch(updateHealthGoal(data));
@@ -65,7 +91,15 @@ const Step2HealthGoal: React.FC<Step2Props> = ({ onNext }) => {
     <>
       <StepTitle>What's your main health goal?</StepTitle>
       <StepDescription>
-        Choose the primary goal that best describes what you want to achieve with your meal planning.
+        {hasCriticalConditions ? (
+          <>
+            Based on your medical conditions, we've filtered the options to those that are most appropriate for your health needs.
+            <br />
+            <em>Note: Options like "Lose weight", "Gain weight", and "Intermittent fasting" are hidden to avoid potential flare triggers.</em>
+          </>
+        ) : (
+          'Choose the primary goal that best describes what you want to achieve with your meal planning.'
+        )}
       </StepDescription>
 
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -98,7 +132,7 @@ const Step2HealthGoal: React.FC<Step2Props> = ({ onNext }) => {
           {errors.goal && <ErrorMessage>{errors.goal.message}</ErrorMessage>}
         </FormGroup>
 
-        {selectedGoal === 'Custom' && (
+        {selectedGoal === 'Other' && (
           <FormGroup>
             <Label htmlFor="customGoal">Describe your custom goal</Label>
             <Input
@@ -116,4 +150,4 @@ const Step2HealthGoal: React.FC<Step2Props> = ({ onNext }) => {
   );
 };
 
-export default Step2HealthGoal; 
+export default Step3HealthGoal; 

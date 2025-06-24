@@ -1,10 +1,11 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { RootState, AppDispatch } from '../../store';
 import {
   nextStep,
   previousStep,
+  goToStep,
   submitOnboardingForm,
   clearError,
   updateBasicInformation
@@ -12,13 +13,12 @@ import {
 
 // Step components
 import Step1BasicInformation from './steps/Step1BasicInformation';
-import Step2HealthGoal from './steps/Step2HealthGoal';
-import Step3DietaryPreferences from './steps/Step3DietaryPreferences';
-import Step4AllergiesIntolerances from './steps/Step4AllergiesIntolerances';
-import Step5MedicalConditions from './steps/Step5MedicalConditions';
+import Step2MedicalConditions from './steps/Step2MedicalConditions';
+import Step3HealthGoal from './steps/Step3HealthGoal';
+import Step4DietaryPreferences from './steps/Step4DietaryPreferences';
+import Step5AllergiesIntolerances from './steps/Step5AllergiesIntolerances';
 import Step6MealHabits from './steps/Step6MealHabits';
 import Step7Location from './steps/Step7Location';
-import Step8MenuUpload from './steps/Step8MenuUpload';
 
 // Styled components
 import {
@@ -43,6 +43,7 @@ import {
 const OnboardingForm: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const {
     currentStep,
     formData,
@@ -51,8 +52,27 @@ const OnboardingForm: React.FC = () => {
     error
   } = useSelector((state: RootState) => state.onboarding);
 
-  const totalSteps = 8;
+  const totalSteps = 7;
   const progress = (currentStep / totalSteps) * 100;
+
+  // Handle URL-based navigation
+  useEffect(() => {
+    const stepParam = searchParams.get('step');
+    if (stepParam) {
+      const stepNumber = parseInt(stepParam, 10);
+      if (stepNumber >= 1 && stepNumber <= totalSteps && stepNumber !== currentStep) {
+        dispatch(goToStep(stepNumber));
+      }
+    }
+  }, [searchParams, dispatch, currentStep, totalSteps]);
+
+  // Update URL when step changes
+  useEffect(() => {
+    const currentStepParam = searchParams.get('step');
+    if (currentStepParam !== currentStep.toString()) {
+      setSearchParams({ step: currentStep.toString() });
+    }
+  }, [currentStep, searchParams, setSearchParams]);
 
   useEffect(() => {
     if (error) {
@@ -71,15 +91,12 @@ const OnboardingForm: React.FC = () => {
       if (step1Form) {
         const formData = new FormData(step1Form);
         const step1Data = {
-          name: formData.get('name') as string,
-          email: formData.get('email') as string,
+          username: formData.get('username') as string,
           password: formData.get('password') as string,
           confirmPassword: formData.get('confirmPassword') as string,
-          age: formData.get('age') ? Number(formData.get('age')) : undefined,
-          gender: formData.get('gender') as 'Male' | 'Female' | 'Other' | undefined,
           height: formData.get('height') ? Number(formData.get('height')) : undefined,
           weight: formData.get('weight') ? Number(formData.get('weight')) : undefined,
-          activityLevel: formData.get('activityLevel') as 'Sedentary' | 'Lightly Active' | 'Active' | 'Very Active' | undefined,
+          activityLevel: formData.get('activityLevel') as 'Light exercise' | 'Moderate' | 'Hard' | undefined,
         };
         
         console.log('Saving Step 1 data before proceeding:', step1Data);
@@ -109,24 +126,28 @@ const OnboardingForm: React.FC = () => {
     navigate('/');
   };
 
+  const handleStepClick = (stepNumber: number) => {
+    // Allow direct navigation to any step
+    dispatch(goToStep(stepNumber));
+    setSearchParams({ step: stepNumber.toString() });
+  };
+
   const renderCurrentStep = () => {
     switch (currentStep) {
       case 1:
         return <Step1BasicInformation onNext={handleNext} />;
       case 2:
-        return <Step2HealthGoal onNext={handleNext} />;
+        return <Step2MedicalConditions onNext={handleNext} />;
       case 3:
-        return <Step3DietaryPreferences onNext={handleNext} />;
+        return <Step3HealthGoal onNext={handleNext} />;
       case 4:
-        return <Step4AllergiesIntolerances onNext={handleNext} />;
+        return <Step4DietaryPreferences onNext={handleNext} />;
       case 5:
-        return <Step5MedicalConditions onNext={handleNext} />;
+        return <Step5AllergiesIntolerances onNext={handleNext} />;
       case 6:
         return <Step6MealHabits onNext={handleNext} />;
       case 7:
         return <Step7Location onNext={handleNext} />;
-      case 8:
-        return <Step8MenuUpload onNext={handleNext} />;
       default:
         return <Step1BasicInformation onNext={handleNext} />;
     }
@@ -135,13 +156,12 @@ const OnboardingForm: React.FC = () => {
   const getStepTitle = () => {
     const titles = [
       'Basic Information',
+      'Medical Conditions',
       'Health Goal',
       'Dietary Preferences',
       'Allergies & Intolerances',
-      'Medical Conditions',
       'Meal Habits',
-      'Location',
-      'Menu Upload'
+      'Location'
     ];
     return titles[currentStep - 1] || 'Getting Started';
   };
@@ -189,54 +209,156 @@ const OnboardingForm: React.FC = () => {
         </Header>
 
         <StepIndicator>
-          {Array.from({ length: totalSteps }, (_, index) => (
-            <StepDot
-              key={index + 1}
-              active={index + 1 === currentStep}
-              completed={index + 1 < currentStep}
-            />
-          ))}
+          {Array.from({ length: totalSteps }, (_, index) => {
+            const stepTitles = [
+              'Basic Information',
+              'Medical Conditions',
+              'Health Goal',
+              'Dietary Preferences',
+              'Allergies & Intolerances',
+              'Meal Habits',
+              'Location'
+            ];
+            return (
+              <StepDot
+                key={index + 1}
+                active={index + 1 === currentStep}
+                completed={index + 1 < currentStep}
+                onClick={() => handleStepClick(index + 1)}
+                style={{ cursor: 'pointer' }}
+                title={`Go to step ${index + 1}: ${stepTitles[index]}`}
+              />
+            );
+          })}
         </StepIndicator>
 
+        {/* Jump to Step Dropdown */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          gap: '10px',
+          margin: '15px 0',
+          padding: '0 20px'
+        }}>
+          <label style={{ fontSize: '14px', fontWeight: '500', color: '#666' }}>
+            Jump to Step:
+          </label>
+          <select
+            value={currentStep}
+            onChange={(e) => handleStepClick(parseInt(e.target.value, 10))}
+            style={{
+              padding: '6px 12px',
+              borderRadius: '6px',
+              border: '1px solid #ddd',
+              fontSize: '14px',
+              backgroundColor: 'white',
+              cursor: 'pointer'
+            }}
+          >
+            {Array.from({ length: totalSteps }, (_, index) => {
+              const stepNumber = index + 1;
+              const stepTitles = [
+                'Basic Information',
+                'Medical Conditions',
+                'Health Goal',
+                'Dietary Preferences',
+                'Allergies & Intolerances',
+                'Meal Habits',
+                'Location'
+              ];
+              return (
+                <option key={stepNumber} value={stepNumber}>
+                  Step {stepNumber}: {stepTitles[index]}
+                </option>
+              );
+            })}
+          </select>
+        </div>
+
+        {/* Step Navigation Menu */}
+        <div style={{ 
+          display: 'flex', 
+          flexWrap: 'wrap', 
+          gap: '8px', 
+          justifyContent: 'center', 
+          margin: '20px 0',
+          padding: '0 20px'
+        }}>
+          {Array.from({ length: totalSteps }, (_, index) => {
+            const stepNumber = index + 1;
+            const stepTitles = [
+              'Basic Info',
+              'Medical Conditions',
+              'Health Goal',
+              'Dietary Preferences',
+              'Allergies',
+              'Meal Habits',
+              'Location'
+            ];
+            const isActive = stepNumber === currentStep;
+            const isCompleted = stepNumber < currentStep;
+            
+            return (
+              <button
+                key={stepNumber}
+                onClick={() => handleStepClick(stepNumber)}
+                style={{
+                  padding: '8px 12px',
+                  fontSize: '12px',
+                  borderRadius: '6px',
+                  border: isActive ? '2px solid #007bff' : '1px solid #ddd',
+                  backgroundColor: isActive ? '#007bff' : isCompleted ? '#28a745' : '#f8f9fa',
+                  color: isActive || isCompleted ? 'white' : '#666',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  fontWeight: isActive ? 'bold' : 'normal'
+                }}
+                title={`Go to Step ${stepNumber}: ${stepTitles[index]}`}
+              >
+                {stepNumber}. {stepTitles[index]}
+              </button>
+            );
+          })}
+        </div>
+
         <FormContent>
-          {error && <ErrorMessage>{error}</ErrorMessage>}
           {renderCurrentStep()}
         </FormContent>
 
+        {error && (
+          <ErrorMessage>
+            {error}
+          </ErrorMessage>
+        )}
+
         <ButtonGroup>
           {currentStep > 1 && (
-            <Button
-              variant="outline"
-              onClick={handlePrevious}
-            >
-              Back
+            <Button variant="secondary" onClick={handlePrevious}>
+              Previous
             </Button>
           )}
           
-          {currentStep === 1 && <div />}
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {currentStep < totalSteps ? (
-              <Button variant="primary" onClick={handleNext}>
-                Next
-              </Button>
-            ) : (
-              <Button
-                variant="primary"
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <LoadingSpinner />
-                    <span style={{ marginLeft: '8px' }}>Completing...</span>
-                  </>
-                ) : (
-                  'Complete Setup'
-                )}
-              </Button>
-            )}
-          </div>
+          {currentStep < totalSteps ? (
+            <Button variant="primary" onClick={handleNext}>
+              Next Step
+            </Button>
+          ) : (
+            <Button 
+              variant="primary" 
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <LoadingSpinner />
+                  Completing Setup...
+                </>
+              ) : (
+                'Complete Setup'
+              )}
+            </Button>
+          )}
         </ButtonGroup>
       </FormWrapper>
     </OnboardingContainer>

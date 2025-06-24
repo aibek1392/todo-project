@@ -61,103 +61,135 @@ export const userProfileAPI = {
     // Transform the frontend data structure to match the backend API
     const backendData = {
       // Authentication fields
-      email: profileData.basicInformation.email,
+      username: profileData.basicInformation.username,
       password: profileData.basicInformation.password,
       
       // Basic information
-      name: profileData.basicInformation.name,
-      age: profileData.basicInformation.age,
-      gender: profileData.basicInformation.gender,
       height_ft: profileData.basicInformation.height,
       weight_lbs: profileData.basicInformation.weight,
       activity_level: profileData.basicInformation.activityLevel,
       location: profileData.location.zipCodeOrCity,
-      health_goals: [
-        profileData.healthGoal.goal,
-        ...(profileData.healthGoal.customGoal ? [profileData.healthGoal.customGoal] : [])
-      ].filter(goal => goal && goal.trim() !== ''),
-      custom_health_goal: profileData.healthGoal.customGoal,
+      
+      // Health and dietary information
+      health_goal: profileData.healthGoal.goal,
+      custom_goal: profileData.healthGoal.customGoal,
+      
+      // Medical conditions with details
+      medical_conditions: {
+        conditions: profileData.medicalConditions.conditions || [],
+        diabetes_insulin: profileData.medicalConditions.diabetesInsulin,
+        pcos_hormonal: profileData.medicalConditions.pcosHormonal,
+        hbp_salt_intake: profileData.medicalConditions.hbpSaltIntake,
+        ibd_type: profileData.medicalConditions.ibdType,
+        uc_condition: profileData.medicalConditions.ucCondition,
+        other_condition: profileData.medicalConditions.otherCondition
+      },
+      
+      // Preferences and restrictions
       preferences: {
         diet: profileData.dietaryPreferences.preferences || [],
-        likes: profileData.dietaryPreferences.likedFoods ? 
-          profileData.dietaryPreferences.likedFoods.split(',').map(item => item.trim()) : [],
-        dislikes: profileData.mealHabits.dislikedFoods ? 
-          profileData.mealHabits.dislikedFoods.split(',').map(item => item.trim()) : [],
+        custom_diet: profileData.dietaryPreferences.customPreference,
+        dislikes: profileData.mealHabits.foodsDisliked ? 
+          profileData.mealHabits.foodsDisliked.split(',').map((item: string) => item.trim()) : [],
         allergies: profileData.allergiesIntolerances.allergies || [],
-        conditions: profileData.medicalConditions.conditions || [],
+        other_allergy: profileData.allergiesIntolerances.otherAllergy,
         meals_per_day: profileData.mealHabits.mealsPerDay,
-        snacks: profileData.mealHabits.snacksBetweenMeals,
-        cooks_often: profileData.mealHabits.cookAtHome
+        snacks: profileData.mealHabits.snacks,
+        cooks_often: profileData.mealHabits.cooksOften
       }
     };
 
-    const response = await api.post('/complete_user_registration', backendData);
+    console.log('Sending complete registration data:', backendData);
+    
+    const response = await api.post('/auth/complete-registration', backendData);
     return response.data;
   },
 
+  // Create user profile
   createProfile: async (profileData: OnboardingFormData): Promise<any> => {
     // Transform the frontend data structure to match the backend API
     const backendData = {
-      name: profileData.basicInformation.name,
-      age: profileData.basicInformation.age,
-      gender: profileData.basicInformation.gender,
       height_ft: profileData.basicInformation.height,
       weight_lbs: profileData.basicInformation.weight,
       activity_level: profileData.basicInformation.activityLevel,
       location: profileData.location.zipCodeOrCity,
-      health_goals: [
-        profileData.healthGoal.goal,
-        ...(profileData.healthGoal.customGoal ? [profileData.healthGoal.customGoal] : [])
-      ].filter(goal => goal && goal.trim() !== ''),
-      custom_health_goal: profileData.healthGoal.customGoal,
+      
+      // Health and dietary information
+      health_goal: profileData.healthGoal.goal,
+      custom_goal: profileData.healthGoal.customGoal,
+      
+      // Medical conditions with details
+      medical_conditions: {
+        conditions: profileData.medicalConditions.conditions || [],
+        diabetes_insulin: profileData.medicalConditions.diabetesInsulin,
+        pcos_hormonal: profileData.medicalConditions.pcosHormonal,
+        hbp_salt_intake: profileData.medicalConditions.hbpSaltIntake,
+        ibd_type: profileData.medicalConditions.ibdType,
+        uc_condition: profileData.medicalConditions.ucCondition,
+        other_condition: profileData.medicalConditions.otherCondition
+      },
+      
+      // Preferences and restrictions
       preferences: {
         diet: profileData.dietaryPreferences.preferences || [],
-        likes: profileData.dietaryPreferences.likedFoods ? 
-          profileData.dietaryPreferences.likedFoods.split(',').map(item => item.trim()) : [],
-        dislikes: profileData.mealHabits.dislikedFoods ? 
-          profileData.mealHabits.dislikedFoods.split(',').map(item => item.trim()) : [],
+        custom_diet: profileData.dietaryPreferences.customPreference,
+        dislikes: profileData.mealHabits.foodsDisliked ? 
+          profileData.mealHabits.foodsDisliked.split(',').map((item: string) => item.trim()) : [],
         allergies: profileData.allergiesIntolerances.allergies || [],
-        conditions: profileData.medicalConditions.conditions || [],
+        other_allergy: profileData.allergiesIntolerances.otherAllergy,
         meals_per_day: profileData.mealHabits.mealsPerDay,
-        snacks: profileData.mealHabits.snacksBetweenMeals,
-        cooks_often: profileData.mealHabits.cookAtHome
+        snacks: profileData.mealHabits.snacks,
+        cooks_often: profileData.mealHabits.cooksOften
       }
     };
 
-    const response = await api.post('/create_user_profile', backendData);
+    console.log('Creating profile with data:', backendData);
+    
+    const response = await api.post('/profile', backendData);
     return response.data;
   },
 
+  // Update user profile
   updateProfile: async (profileData: OnboardingFormData): Promise<any> => {
     // Transform the frontend data structure to match the backend API
     const backendData = {
-      name: profileData.basicInformation.name,
-      age: profileData.basicInformation.age,
-      gender: profileData.basicInformation.gender,
       height_ft: profileData.basicInformation.height,
       weight_lbs: profileData.basicInformation.weight,
       activity_level: profileData.basicInformation.activityLevel,
       location: profileData.location.zipCodeOrCity,
-      health_goals: [
-        profileData.healthGoal.goal,
-        ...(profileData.healthGoal.customGoal ? [profileData.healthGoal.customGoal] : [])
-      ].filter(goal => goal && goal.trim() !== ''),
-      custom_health_goal: profileData.healthGoal.customGoal,
+      
+      // Health and dietary information
+      health_goal: profileData.healthGoal.goal,
+      custom_goal: profileData.healthGoal.customGoal,
+      
+      // Medical conditions with details
+      medical_conditions: {
+        conditions: profileData.medicalConditions.conditions || [],
+        diabetes_insulin: profileData.medicalConditions.diabetesInsulin,
+        pcos_hormonal: profileData.medicalConditions.pcosHormonal,
+        hbp_salt_intake: profileData.medicalConditions.hbpSaltIntake,
+        ibd_type: profileData.medicalConditions.ibdType,
+        uc_condition: profileData.medicalConditions.ucCondition,
+        other_condition: profileData.medicalConditions.otherCondition
+      },
+      
+      // Preferences and restrictions
       preferences: {
         diet: profileData.dietaryPreferences.preferences || [],
-        likes: profileData.dietaryPreferences.likedFoods ? 
-          profileData.dietaryPreferences.likedFoods.split(',').map(item => item.trim()) : [],
-        dislikes: profileData.mealHabits.dislikedFoods ? 
-          profileData.mealHabits.dislikedFoods.split(',').map(item => item.trim()) : [],
+        custom_diet: profileData.dietaryPreferences.customPreference,
+        dislikes: profileData.mealHabits.foodsDisliked ? 
+          profileData.mealHabits.foodsDisliked.split(',').map((item: string) => item.trim()) : [],
         allergies: profileData.allergiesIntolerances.allergies || [],
-        conditions: profileData.medicalConditions.conditions || [],
+        other_allergy: profileData.allergiesIntolerances.otherAllergy,
         meals_per_day: profileData.mealHabits.mealsPerDay,
-        snacks: profileData.mealHabits.snacksBetweenMeals,
-        cooks_often: profileData.mealHabits.cookAtHome
+        snacks: profileData.mealHabits.snacks,
+        cooks_often: profileData.mealHabits.cooksOften
       }
     };
 
-    const response = await api.put('/update_user_profile', backendData);
+    console.log('Updating profile with data:', backendData);
+    
+    const response = await api.put('/profile', backendData);
     return response.data;
   },
 

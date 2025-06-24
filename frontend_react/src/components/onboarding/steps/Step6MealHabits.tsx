@@ -33,7 +33,6 @@ const Step6MealHabits: React.FC<Step6Props> = ({ onNext }) => {
     formState: { errors },
     trigger
   } = useForm({
-
     defaultValues: mealHabits,
     mode: 'onChange'
   });
@@ -52,7 +51,7 @@ const Step6MealHabits: React.FC<Step6Props> = ({ onNext }) => {
 
   return (
     <>
-      <StepTitle>Tell us about your meal habits</StepTitle>
+      <StepTitle>Meal Habits</StepTitle>
       <StepDescription>
         Understanding your eating patterns helps us create more realistic and personalized meal plans.
       </StepDescription>
@@ -66,11 +65,13 @@ const Step6MealHabits: React.FC<Step6Props> = ({ onNext }) => {
             {...register('mealsPerDay', { valueAsNumber: true })}
           >
             <option value="">Select number of meals</option>
+            <option value={1}>1 meal</option>
             <option value={2}>2 meals</option>
             <option value={3}>3 meals</option>
             <option value={4}>4 meals</option>
             <option value={5}>5 meals</option>
             <option value={6}>6 meals</option>
+            <option value={7}>7 meals</option>
           </Select>
           {errors.mealsPerDay && <ErrorMessage>{errors.mealsPerDay.message}</ErrorMessage>}
         </FormGroup>
@@ -79,7 +80,7 @@ const Step6MealHabits: React.FC<Step6Props> = ({ onNext }) => {
           <FormGroup>
             <Label>Do you snack between meals?</Label>
             <Controller
-              name="snacksBetweenMeals"
+              name="snacks"
               control={control}
               render={({ field }) => (
                 <RadioGroup>
@@ -107,7 +108,7 @@ const Step6MealHabits: React.FC<Step6Props> = ({ onNext }) => {
           <FormGroup>
             <Label>Do you cook at home often?</Label>
             <Controller
-              name="cookAtHome"
+              name="cooksOften"
               control={control}
               render={({ field }) => (
                 <RadioGroup>
@@ -134,14 +135,14 @@ const Step6MealHabits: React.FC<Step6Props> = ({ onNext }) => {
         </TwoColumnGrid>
 
         <FormGroup>
-          <Label htmlFor="dislikedFoods">Foods you dislike (optional)</Label>
+          <Label htmlFor="foodsDisliked">Foods you dislike (optional)</Label>
           <TextArea
-            id="dislikedFoods"
+            id="foodsDisliked"
             placeholder="Tell us about foods you don't enjoy or want to avoid in your meal plans..."
-            className={errors.dislikedFoods ? 'error' : ''}
-            {...register('dislikedFoods')}
+            className={errors.foodsDisliked ? 'error' : ''}
+            {...register('foodsDisliked')}
           />
-          {errors.dislikedFoods && <ErrorMessage>{errors.dislikedFoods.message}</ErrorMessage>}
+          {errors.foodsDisliked && <ErrorMessage>{errors.foodsDisliked.message}</ErrorMessage>}
         </FormGroup>
       </form>
     </>

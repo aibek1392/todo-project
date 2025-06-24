@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../../store';
 import { updateDietaryPreferences } from '../../../store/onboardingSlice';
-import { DietaryPreferences, DIETARY_PREFERENCES } from '../../../types/onboarding';
+import { DietaryPreferences, DIETARY_PREFERENCES_NORMAL, DIETARY_PREFERENCES_CRITICAL } from '../../../types/onboarding';
 import {
   StepTitle,
   StepDescription,
@@ -17,13 +17,14 @@ import {
   ErrorMessage
 } from '../OnboardingForm.styles';
 
-interface Step3Props {
+interface Step4Props {
   onNext: () => void;
 }
 
-const Step3DietaryPreferences: React.FC<Step3Props> = ({ onNext }) => {
+const Step4DietaryPreferences: React.FC<Step4Props> = ({ onNext }) => {
   const dispatch = useDispatch();
   const dietaryPrefs = useSelector((state: RootState) => state.onboarding.formData.dietaryPreferences);
+  const medicalConditions = useSelector((state: RootState) => state.onboarding.formData.medicalConditions);
 
   const {
     register,
@@ -33,12 +34,29 @@ const Step3DietaryPreferences: React.FC<Step3Props> = ({ onNext }) => {
     formState: { errors },
     trigger
   } = useForm({
-
     defaultValues: dietaryPrefs,
     mode: 'onChange'
   });
 
   const selectedPreferences = watch('preferences') || [];
+
+  // Determine if user has critical conditions that limit dietary options
+  const hasCriticalConditions = useMemo(() => {
+    const conditions = medicalConditions.conditions || [];
+    return conditions.some(condition => {
+      if (condition === 'IBD (Ulcerative Colitis, Crohn\'s)') {
+        // Check for UC in flare or Crohn's
+        return (medicalConditions.ibdType === 'Ulcerative colitis' && medicalConditions.ucCondition === 'In flare') ||
+               medicalConditions.ibdType === 'Crohns';
+      }
+      return condition === 'Celiac' || condition === 'IBS';
+    });
+  }, [medicalConditions]);
+
+  // Get appropriate dietary preference options based on medical conditions
+  const dietaryOptions = useMemo(() => {
+    return hasCriticalConditions ? DIETARY_PREFERENCES_CRITICAL : DIETARY_PREFERENCES_NORMAL;
+  }, [hasCriticalConditions]);
 
   const onSubmit = (data: any) => {
     dispatch(updateDietaryPreferences(data));
@@ -65,7 +83,15 @@ const Step3DietaryPreferences: React.FC<Step3Props> = ({ onNext }) => {
     <>
       <StepTitle>What are your dietary preferences?</StepTitle>
       <StepDescription>
-        Select all dietary preferences that apply to you. This helps us recommend suitable meals.
+        {hasCriticalConditions ? (
+          <>
+            Based on your medical conditions, we've filtered the options to those that are most appropriate for your health needs.
+            <br />
+            <em>⚠️ These options are filtered based on your medical condition to avoid flare triggers.</em>
+          </>
+        ) : (
+          'Select all dietary preferences that apply to you. This helps us recommend suitable meals.'
+        )}
       </StepDescription>
 
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -76,7 +102,7 @@ const Step3DietaryPreferences: React.FC<Step3Props> = ({ onNext }) => {
             control={control}
             render={({ field }) => (
               <CheckboxGroup>
-                {DIETARY_PREFERENCES.map((preference) => (
+                {dietaryOptions.map((preference) => (
                   <CheckboxItem
                     key={preference}
                     className={selectedPreferences.includes(preference) ? 'checked' : ''}
@@ -107,20 +133,9 @@ const Step3DietaryPreferences: React.FC<Step3Props> = ({ onNext }) => {
             {errors.customPreference && <ErrorMessage>{errors.customPreference.message}</ErrorMessage>}
           </FormGroup>
         )}
-
-        <FormGroup>
-          <Label htmlFor="likedFoods">Foods you like or want included (optional)</Label>
-          <TextArea
-            id="likedFoods"
-            placeholder="Tell us about foods you enjoy or would like to see more of in your meal plans..."
-            className={errors.likedFoods ? 'error' : ''}
-            {...register('likedFoods')}
-          />
-          {errors.likedFoods && <ErrorMessage>{errors.likedFoods.message}</ErrorMessage>}
-        </FormGroup>
       </form>
     </>
   );
 };
 
-export default Step3DietaryPreferences; 
+export default Step4DietaryPreferences; 

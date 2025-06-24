@@ -13,32 +13,29 @@ const TestProfileUpdate: React.FC = () => {
 
   const testData: OnboardingFormData = {
     basicInformation: {
-      name: 'Test User',
-      email: 'test@example.com',
-      age: 25,
-      gender: 'Male',
+      username: 'testuser123',
+      password: 'testpassword',
       height: 5.8, // 5 feet 8 inches
       weight: 160, // pounds
-      activityLevel: 'Active'
+      activityLevel: 'Moderate'
+    },
+    medicalConditions: {
+      conditions: ['IBS', 'GERD / Acid Reflux']
     },
     healthGoal: {
       goal: 'Lose weight'
     },
     dietaryPreferences: {
-      preferences: ['Vegetarian', 'Low FODMAP'],
-      likedFoods: 'avocado, chicken, salmon'
+      preferences: ['Vegetarian', 'Low FODMAP']
     },
     allergiesIntolerances: {
       allergies: ['Gluten / Wheat', 'Dairy / Lactose']
     },
-    medicalConditions: {
-      conditions: ['IBS', 'GERD / Acid reflux']
-    },
     mealHabits: {
       mealsPerDay: 3,
-      snacksBetweenMeals: true,
-      cookAtHome: false,
-      dislikedFoods: 'broccoli, mushrooms'
+      snacks: true,
+      cooksOften: false,
+      foodsDisliked: 'broccoli, mushrooms'
     },
     location: {
       zipCodeOrCity: 'New York, NY'
@@ -100,14 +97,13 @@ const TestProfileUpdate: React.FC = () => {
 
     const partialData: OnboardingFormData = {
       basicInformation: {
-        name: 'Test User Partial',
-        age: 26,
+        username: 'testuser_partial',
         weight: 155
       },
+      medicalConditions: { conditions: [] },
       healthGoal: { goal: 'Maintain weight' },
       dietaryPreferences: { preferences: [] },
       allergiesIntolerances: { allergies: [] },
-      medicalConditions: { conditions: [] },
       mealHabits: {},
       location: { zipCodeOrCity: 'Los Angeles, CA' },
       menuUpload: {}

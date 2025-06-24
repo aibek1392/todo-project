@@ -4,10 +4,10 @@ import { userProfileAPI } from '../services/api';
 
 const initialFormData: OnboardingFormData = {
   basicInformation: {},
+  medicalConditions: { conditions: [] },
   healthGoal: { goal: 'Lose weight' },
   dietaryPreferences: { preferences: [] },
   allergiesIntolerances: { allergies: [] },
-  medicalConditions: { conditions: [] },
   mealHabits: {},
   location: { zipCodeOrCity: '' },
   menuUpload: {}
@@ -34,16 +34,12 @@ export const submitOnboardingForm = createAsyncThunk(
       console.log('Form data being submitted:', formData);
       console.log('Basic info:', formData.basicInformation);
       
-      if (!formData.basicInformation.email || !formData.basicInformation.password) {
-        console.error('Missing email or password:', {
-          email: formData.basicInformation.email,
+      if (!formData.basicInformation.username || !formData.basicInformation.password) {
+        console.error('Missing username or password:', {
+          username: formData.basicInformation.username,
           password: formData.basicInformation.password ? '***' : undefined
         });
-        throw new Error('Please go back to Step 1 and complete: Email and password are required');
-      }
-      if (!formData.basicInformation.name) {
-        console.error('Missing name:', formData.basicInformation.name);
-        throw new Error('Please go back to Step 1 and complete: Name is required');
+        throw new Error('Please go back to Step 1 and complete: Username and password are required');
       }
       
       // Call the complete registration API
@@ -83,7 +79,7 @@ const onboardingSlice = createSlice({
   initialState,
   reducers: {
     nextStep: (state) => {
-      if (state.currentStep < 8) {
+      if (state.currentStep < 7) {
         state.currentStep += 1;
       }
     },
@@ -93,12 +89,15 @@ const onboardingSlice = createSlice({
       }
     },
     goToStep: (state, action: PayloadAction<number>) => {
-      if (action.payload >= 1 && action.payload <= 8) {
+      if (action.payload >= 1 && action.payload <= 7) {
         state.currentStep = action.payload;
       }
     },
     updateBasicInformation: (state, action: PayloadAction<Partial<OnboardingFormData['basicInformation']>>) => {
       state.formData.basicInformation = { ...state.formData.basicInformation, ...action.payload };
+    },
+    updateMedicalConditions: (state, action: PayloadAction<Partial<OnboardingFormData['medicalConditions']>>) => {
+      state.formData.medicalConditions = { ...state.formData.medicalConditions, ...action.payload };
     },
     updateHealthGoal: (state, action: PayloadAction<Partial<OnboardingFormData['healthGoal']>>) => {
       state.formData.healthGoal = { ...state.formData.healthGoal, ...action.payload };
@@ -108,9 +107,6 @@ const onboardingSlice = createSlice({
     },
     updateAllergiesIntolerances: (state, action: PayloadAction<Partial<OnboardingFormData['allergiesIntolerances']>>) => {
       state.formData.allergiesIntolerances = { ...state.formData.allergiesIntolerances, ...action.payload };
-    },
-    updateMedicalConditions: (state, action: PayloadAction<Partial<OnboardingFormData['medicalConditions']>>) => {
-      state.formData.medicalConditions = { ...state.formData.medicalConditions, ...action.payload };
     },
     updateMealHabits: (state, action: PayloadAction<Partial<OnboardingFormData['mealHabits']>>) => {
       state.formData.mealHabits = { ...state.formData.mealHabits, ...action.payload };
@@ -154,10 +150,10 @@ export const {
   previousStep,
   goToStep,
   updateBasicInformation,
+  updateMedicalConditions,
   updateHealthGoal,
   updateDietaryPreferences,
   updateAllergiesIntolerances,
-  updateMedicalConditions,
   updateMealHabits,
   updateLocation,
   updateMenuUpload,

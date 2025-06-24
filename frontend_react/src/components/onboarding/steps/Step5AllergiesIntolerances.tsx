@@ -16,11 +16,11 @@ import {
   ErrorMessage
 } from '../OnboardingForm.styles';
 
-interface Step4Props {
+interface Step5Props {
   onNext: () => void;
 }
 
-const Step4AllergiesIntolerances: React.FC<Step4Props> = ({ onNext }) => {
+const Step5AllergiesIntolerances: React.FC<Step5Props> = ({ onNext }) => {
   const dispatch = useDispatch();
   const allergies = useSelector((state: RootState) => state.onboarding.formData.allergiesIntolerances);
 
@@ -32,7 +32,6 @@ const Step4AllergiesIntolerances: React.FC<Step4Props> = ({ onNext }) => {
     formState: { errors },
     trigger
   } = useForm({
-
     defaultValues: allergies,
     mode: 'onChange'
   });
@@ -62,7 +61,7 @@ const Step4AllergiesIntolerances: React.FC<Step4Props> = ({ onNext }) => {
 
   return (
     <>
-      <StepTitle>Do you have any allergies or intolerances?</StepTitle>
+      <StepTitle>Allergies & Intolerances</StepTitle>
       <StepDescription>
         Let us know about any food allergies or intolerances so we can avoid recommending unsuitable meals.
       </StepDescription>
@@ -111,4 +110,4 @@ const Step4AllergiesIntolerances: React.FC<Step4Props> = ({ onNext }) => {
   );
 };
 
-export default Step4AllergiesIntolerances; 
+export default Step5AllergiesIntolerances; 
