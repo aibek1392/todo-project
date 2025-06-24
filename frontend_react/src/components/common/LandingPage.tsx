@@ -99,7 +99,7 @@ const LandingPage: React.FC = () => {
           dietary needs, and lifestyle to create personalized meal plans that nourish your body and mind.
         </Subtitle>
         <ButtonGroup>
-          <Button to="/onboarding" variant="primary">
+          <Button to="/onboarding?step=1" variant="primary">
             Get Started - Create Account
           </Button>
           <Button to="/login" variant="secondary">

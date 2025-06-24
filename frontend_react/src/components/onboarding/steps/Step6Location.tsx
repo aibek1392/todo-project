@@ -13,11 +13,11 @@ import {
   ErrorMessage
 } from '../OnboardingForm.styles';
 
-interface Step7Props {
+interface Step6Props {
   onNext: () => void;
 }
 
-const Step7Location: React.FC<Step7Props> = ({ onNext }) => {
+const Step6Location: React.FC<Step6Props> = ({ onNext }) => {
   const dispatch = useDispatch();
   const location = useSelector((state: RootState) => state.onboarding.formData.location);
 
@@ -71,4 +71,4 @@ const Step7Location: React.FC<Step7Props> = ({ onNext }) => {
   );
 };
 
-export default Step7Location; 
+export default Step6Location; 

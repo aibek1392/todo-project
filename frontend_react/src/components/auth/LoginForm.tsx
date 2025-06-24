@@ -111,8 +111,8 @@ const LoginForm: React.FC = () => {
   const { isLoading, error } = useAppSelector((state) => state.auth);
 
   const [formData, setFormData] = useState<LoginCredentials>({
-    email: '',
-    password: '',
+    username: 'testuser',
+    password: 'test123',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -146,15 +146,15 @@ const LoginForm: React.FC = () => {
         
         <Form onSubmit={handleSubmit}>
           <FormGroup>
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="username">Username</Label>
             <Input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
+              type="text"
+              id="username"
+              name="username"
+              value={formData.username}
               onChange={handleChange}
               required
-              placeholder="Enter your email"
+              placeholder="Enter your username"
             />
           </FormGroup>
 
@@ -177,7 +177,7 @@ const LoginForm: React.FC = () => {
         </Form>
 
         <LinkText>
-          Don't have an account? <Link to="/onboarding">Create Account</Link>
+          Don't have an account? <Link to="/onboarding?step=1">Create Account</Link>
         </LinkText>
       </FormWrapper>
     </Container>

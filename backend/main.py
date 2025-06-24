@@ -8,6 +8,18 @@ import jwt
 import bcrypt
 from datetime import datetime, timedelta
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Import meal planner
+from meal_planner import (
+    generate_meal_plan, 
+    clear_meal_plan_cache, 
+    get_cache_stats,
+    MealPlanResponse
+)
 
 app = FastAPI()
 
@@ -34,7 +46,7 @@ class UserCreate(BaseModel):
     full_name: str
 
 class UserLogin(BaseModel):
-    email: EmailStr
+    username: str
     password: str
 
 class User(BaseModel):
@@ -259,15 +271,15 @@ async def signup(user_data: UserCreate):
 @app.post("/api/auth/login", response_model=Token)
 async def login(user_credentials: UserLogin):
     if supabase is None:
-        # Find user in memory
+        # Find user in memory by username
         user = None
         for u in users:
-            if u["email"] == user_credentials.email:
+            if u.get("username") == user_credentials.username or u.get("full_name") == user_credentials.username:
                 user = u
                 break
         
         if not user or not verify_password(user_credentials.password, user["password"]):
-            raise HTTPException(status_code=401, detail="Incorrect email or password")
+            raise HTTPException(status_code=401, detail="Incorrect username or password")
         
         # Create token
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -277,24 +289,47 @@ async def login(user_credentials: UserLogin):
         
         user_response = User(
             id=user["id"],
-            email=user["email"],
-            full_name=user["full_name"],
+            email=user.get("email", ""),
+            full_name=user.get("username", user.get("full_name", "")),
             created_at=user["created_at"]
         )
         
         return Token(access_token=access_token, token_type="bearer", user=user_response)
     
     try:
-        # Find user in Supabase
-        response = supabase.table('users').select("*").eq("email", user_credentials.email).execute()
+        # Find user in Supabase by username
+        response = supabase.table('users').select("*").eq("username", user_credentials.username).execute()
         
         if not response.data:
-            raise HTTPException(status_code=401, detail="Incorrect email or password")
+            # Fallback to in-memory storage
+            user = None
+            for u in users:
+                if u.get("username") == user_credentials.username or u.get("full_name") == user_credentials.username:
+                    user = u
+                    break
+            
+            if not user or not verify_password(user_credentials.password, user["password"]):
+                raise HTTPException(status_code=401, detail="Incorrect username or password")
+            
+            # Create token
+            access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+            access_token = create_access_token(
+                data={"sub": str(user["id"])}, expires_delta=access_token_expires
+            )
+            
+            user_response = User(
+                id=user["id"],
+                email=user.get("email", ""),
+                full_name=user.get("username", user.get("full_name", "")),
+                created_at=user["created_at"]
+            )
+            
+            return Token(access_token=access_token, token_type="bearer", user=user_response)
         
         user = response.data[0]
         
         if not verify_password(user_credentials.password, user["password_hash"]):
-            raise HTTPException(status_code=401, detail="Incorrect email or password")
+            raise HTTPException(status_code=401, detail="Incorrect username or password")
         
         # Create token
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -312,8 +347,30 @@ async def login(user_credentials: UserLogin):
         return Token(access_token=access_token, token_type="bearer", user=user_response)
         
     except Exception as e:
-        print(f"Supabase error: {str(e)}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        # Fallback to in-memory storage
+        user = None
+        for u in users:
+            if u.get("username") == user_credentials.username or u.get("full_name") == user_credentials.username:
+                user = u
+                break
+        
+        if not user or not verify_password(user_credentials.password, user["password"]):
+            raise HTTPException(status_code=500, detail="Authentication service unavailable")
+        
+        # Create token
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": str(user["id"])}, expires_delta=access_token_expires
+        )
+        
+        user_response = User(
+            id=user["id"],
+            email=user.get("email", ""),
+            full_name=user.get("username", user.get("full_name", "")),
+            created_at=user["created_at"]
+        )
+        
+        return Token(access_token=access_token, token_type="bearer", user=user_response)
 
 @app.get("/api/auth/me", response_model=User)
 async def get_current_user_info(current_user_id: int = Depends(get_current_user)):
@@ -843,3 +900,258 @@ async def complete_user_registration(profile_data: UserProfileCreate):
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
+
+# ===== MEAL PLANNING ENDPOINTS =====
+
+@app.post("/api/generate-meal-plan", response_model=MealPlanResponse)
+async def create_meal_plan(
+    force_refresh: bool = Query(False, description="Force refresh of meal plan, bypassing cache"),
+    current_user_id: int = Depends(get_current_user)
+):
+    """
+    Generate a personalized 7-day meal plan based on user's profile
+    
+    - **force_refresh**: Set to true to generate a fresh meal plan, bypassing cache
+    - Requires authentication
+    - Uses all onboarding data from user's profile
+    - Returns structured meal plan with shopping list
+    """
+    try:
+        # Get user's profile from database
+        if supabase is None:
+            raise HTTPException(status_code=500, detail="Database not configured for meal planning")
+        
+        # Fetch user profile
+        profile_response = supabase.table('user_profiles').select("*").eq("user_id", current_user_id).execute()
+        
+        if not profile_response.data:
+            raise HTTPException(status_code=404, detail="User profile not found. Please complete onboarding first.")
+        
+        profile_data = profile_response.data[0]
+        
+        # Convert database profile to the format expected by meal planner
+        # Safely get preferences with null checking
+        preferences = profile_data.get("preferences") or {}
+        
+        user_profile = {
+            "basicInformation": {
+                "username": profile_data.get("name", "User"),
+                "height": profile_data.get("height_ft", 5.5),
+                "weight": profile_data.get("weight_lbs", 150),
+                "activityLevel": profile_data.get("activity_level", "Moderate")
+            },
+            "medicalConditions": {"conditions": preferences.get("conditions", []) if preferences else []},
+            "healthGoal": {
+                "goal": profile_data.get("health_goals", ["General health"])[0] if profile_data.get("health_goals") else "General health"
+            },
+            "dietaryPreferences": {
+                "preferences": preferences.get("diet", []) if preferences else []
+            },
+            "allergiesIntolerances": {
+                "allergies": preferences.get("allergies", []) if preferences else []
+            },
+            "mealHabits": {
+                "mealsPerDay": preferences.get("meals_per_day", 3) if preferences else 3,
+                "snacks": preferences.get("snacks", False) if preferences else False,
+                "cooksOften": preferences.get("cooks_often", True) if preferences else True,
+                "foodsDisliked": ", ".join(preferences.get("dislikes", [])) if preferences and preferences.get("dislikes") else ""
+            },
+            "location": {
+                "zipCodeOrCity": profile_data.get("location", "United States")
+            }
+        }
+        
+        print(f"🍽️ Generating meal plan for user {current_user_id}")
+        print(f"Profile summary: {user_profile}")
+        
+        # Generate meal plan
+        meal_plan = await generate_meal_plan(user_profile, force_refresh=force_refresh)
+        
+        return meal_plan
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error generating meal plan: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to generate meal plan: {str(e)}")
+
+
+@app.get("/api/meal-plan-cache/stats")
+async def get_meal_plan_cache_stats(current_user_id: int = Depends(get_current_user)):
+    """Get statistics about the Redis meal plan cache"""
+    try:
+        stats = await get_cache_stats()
+        return {
+            "cache_stats": stats,
+            "message": "Cache statistics retrieved successfully"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get cache stats: {str(e)}")
+
+
+@app.delete("/api/meal-plan-cache")
+async def clear_user_meal_plan_cache(current_user_id: int = Depends(get_current_user)):
+    """Clear Redis meal plan cache for the current user"""
+    try:
+        # Get user profile to generate cache key
+        if supabase is None:
+            raise HTTPException(status_code=500, detail="Database not configured")
+        
+        profile_response = supabase.table('user_profiles').select("*").eq("user_id", current_user_id).execute()
+        
+        if profile_response.data:
+            profile_data = profile_response.data[0]
+            # Convert to user profile format for cache key generation (full profile needed for accurate cache key)
+            # Safely get preferences with null checking
+            preferences = profile_data.get("preferences") or {}
+            
+            user_profile = {
+                "basicInformation": {
+                    "username": profile_data.get("name", "User"),
+                    "height": profile_data.get("height_ft", 5.5),
+                    "weight": profile_data.get("weight_lbs", 150),
+                    "activityLevel": profile_data.get("activity_level", "Moderate")
+                },
+                "medicalConditions": {"conditions": preferences.get("conditions", []) if preferences else []},
+                "healthGoal": {
+                    "goal": profile_data.get("health_goals", ["General health"])[0] if profile_data.get("health_goals") else "General health"
+                },
+                "dietaryPreferences": {
+                    "preferences": preferences.get("diet", []) if preferences else []
+                },
+                "allergiesIntolerances": {
+                    "allergies": preferences.get("allergies", []) if preferences else []
+                },
+                "mealHabits": {
+                    "mealsPerDay": preferences.get("meals_per_day", 3) if preferences else 3,
+                    "snacks": preferences.get("snacks", False) if preferences else False,
+                    "cooksOften": preferences.get("cooks_often", True) if preferences else True,
+                    "foodsDisliked": ", ".join(preferences.get("dislikes", [])) if preferences and preferences.get("dislikes") else ""
+                },
+                "location": {
+                    "zipCodeOrCity": profile_data.get("location", "United States")
+                }
+            }
+            
+            result = await clear_meal_plan_cache(user_profile)
+            return {
+                "message": "Meal plan cache cleared successfully",
+                "result": result
+            }
+        
+        return {"message": "No user profile found, nothing to clear"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to clear cache: {str(e)}")
+
+
+@app.delete("/api/meal-plan-cache/all")
+async def clear_all_meal_plan_cache(current_user_id: int = Depends(get_current_user)):
+    """Clear all Redis meal plan cache entries (admin operation)"""
+    try:
+        result = await clear_meal_plan_cache()  # No user_profile means clear all
+        return {
+            "message": "All meal plan cache entries cleared",
+            "result": result
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to clear all cache: {str(e)}")
+
+
+@app.get("/api/user-profile-for-meal-planning")
+async def get_user_profile_summary(current_user_id: int = Depends(get_current_user)):
+    """Get user profile summary formatted for meal planning preview"""
+    try:
+        if supabase is None:
+            raise HTTPException(status_code=500, detail="Database not configured")
+        
+        # Fetch user profile
+        profile_response = supabase.table('user_profiles').select("*").eq("user_id", current_user_id).execute()
+        
+        if not profile_response.data:
+            raise HTTPException(status_code=404, detail="User profile not found")
+        
+        profile_data = profile_response.data[0]
+        
+        # Format for display
+        # Safely get preferences with null checking
+        preferences = profile_data.get("preferences") or {}
+        
+        summary = {
+            "basic_info": {
+                "name": profile_data.get("name", "User"),
+                "height_ft": profile_data.get("height_ft"),
+                "weight_lbs": profile_data.get("weight_lbs"),
+                "activity_level": profile_data.get("activity_level")
+            },
+            "health_goals": profile_data.get("health_goals", []),
+            "dietary_preferences": preferences.get("diet", []) if preferences else [],
+            "allergies": preferences.get("allergies", []) if preferences else [],
+            "meal_habits": {
+                "meals_per_day": preferences.get("meals_per_day", 3) if preferences else 3,
+                "snacks": preferences.get("snacks", False) if preferences else False,
+                "cooks_often": preferences.get("cooks_often", True) if preferences else True,
+                "dislikes": preferences.get("dislikes", []) if preferences else []
+            },
+            "location": profile_data.get("location", "United States")
+        }
+        
+        return {
+            "profile": summary,
+            "meal_planning_ready": True,
+            "message": "Profile ready for meal planning"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error getting profile summary: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get profile summary: {str(e)}")
+
+
+# Test endpoint for meal planning (development only)
+@app.post("/api/test-meal-plan")
+async def test_meal_planning():
+    """Test meal planning with sample data (development only)"""
+    sample_profile = {
+        "basicInformation": {
+            "username": "testuser",
+            "height": 5.8,
+            "weight": 150,
+            "activityLevel": "Moderate"
+        },
+        "medicalConditions": {
+            "conditions": ["Diabetes"],
+            "diabetesInsulin": True
+        },
+        "healthGoal": {
+            "goal": "Lose weight"
+        },
+        "dietaryPreferences": {
+            "preferences": ["Vegetarian"]
+        },
+        "allergiesIntolerances": {
+            "allergies": ["Nuts"]
+        },
+        "mealHabits": {
+            "mealsPerDay": 3,
+            "snacks": True,
+            "cooksOften": True,
+            "foodsDisliked": "Spinach, Mushrooms"
+        },
+        "location": {
+            "zipCodeOrCity": "New York, NY"
+        }
+    }
+    
+    try:
+        meal_plan = await generate_meal_plan(sample_profile)
+        return {
+            "message": "Test meal plan generated successfully",
+            "meal_plan": meal_plan,
+            "note": "This is a test endpoint for development only"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Test failed: {str(e)}")

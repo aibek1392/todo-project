@@ -10,6 +10,7 @@ import TodoList from './components/todos/TodoList';
 import OnboardingForm from './components/onboarding/OnboardingForm';
 import TestProfileUpdate from './components/TestProfileUpdate';
 import DebugAuth from './components/DebugAuth';
+import { MealPlanDisplay } from './components/mealplan';
 import './App.css';
 
 const App: React.FC = () => {
@@ -35,6 +36,16 @@ const App: React.FC = () => {
               {/* Protected routes */}
               <Route 
                 path="/meals" 
+                element={
+                  <ProtectedRoute>
+                    <MealPlanDisplay />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Todos route for testing */}
+              <Route 
+                path="/todos-test" 
                 element={
                   <ProtectedRoute>
                     <TodoList />

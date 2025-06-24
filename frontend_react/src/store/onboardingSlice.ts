@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { OnboardingState, OnboardingFormData } from '../types/onboarding';
 import { userProfileAPI } from '../services/api';
+import { setAuthData } from './authSlice';
 
 const initialFormData: OnboardingFormData = {
   basicInformation: {},
@@ -53,15 +54,13 @@ export const submitOnboardingForm = createAsyncThunk(
       // Store user profile data
       localStorage.setItem('userProfile', JSON.stringify(formData));
       
-      // Update auth state if we have access to it
+      // Update auth state to automatically log in the user
       if (response.user && response.access_token) {
-        // Dispatch to auth slice if available
-        try {
-          const { setUser } = await import('./authSlice');
-          dispatch(setUser(response.user));
-        } catch (e) {
-          console.log('Auth slice not available, continuing...');
-        }
+        dispatch(setAuthData({
+          user: response.user,
+          token: response.access_token
+        }));
+        console.log('User automatically logged in after registration');
       }
       
       console.log('Complete registration successful:', response);
@@ -79,7 +78,7 @@ const onboardingSlice = createSlice({
   initialState,
   reducers: {
     nextStep: (state) => {
-      if (state.currentStep < 7) {
+      if (state.currentStep < 6) {
         state.currentStep += 1;
       }
     },
@@ -89,7 +88,7 @@ const onboardingSlice = createSlice({
       }
     },
     goToStep: (state, action: PayloadAction<number>) => {
-      if (action.payload >= 1 && action.payload <= 7) {
+      if (action.payload >= 1 && action.payload <= 6) {
         state.currentStep = action.payload;
       }
     },

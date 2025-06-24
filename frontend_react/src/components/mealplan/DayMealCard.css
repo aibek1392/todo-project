@@ -1,0 +1,216 @@
+/* Day Meal Card Styles */
+.day-meal-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.day-meal-card:hover {
+  border-color: #059669;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.1);
+}
+
+/* Day Header */
+.day-header {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.day-header:hover {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+}
+
+.day-header:focus {
+  outline: 2px solid #059669;
+  outline-offset: -2px;
+}
+
+.day-header.expanded {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border-bottom-color: #059669;
+}
+
+.day-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.day-number {
+  background: #059669;
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  min-width: 60px;
+  text-align: center;
+}
+
+.day-details h3.day-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.day-details p.day-date {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin: 0;
+  margin-top: 0.25rem;
+}
+
+.day-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+  text-align: right;
+}
+
+.meals-count {
+  font-size: 0.9rem;
+  color: #374151;
+  font-weight: 600;
+}
+
+.total-calories {
+  font-size: 0.8rem;
+  color: #059669;
+  font-weight: 600;
+}
+
+.expand-icon {
+  color: #6b7280;
+  font-size: 1rem;
+  transition: transform 0.2s ease;
+  margin-left: 1rem;
+}
+
+.expand-icon.rotated {
+  transform: rotate(180deg);
+  color: #059669;
+}
+
+/* Day Content */
+.day-content {
+  padding: 1.5rem;
+  background: white;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.meals-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+/* Responsive Grid */
+@media (min-width: 640px) {
+  .meals-grid {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .meals-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1200px) {
+  .meals-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Mobile Optimizations */
+@media (max-width: 640px) {
+  .day-header {
+    padding: 0.75rem 1rem;
+  }
+  
+  .day-info {
+    gap: 0.75rem;
+  }
+  
+  .day-number {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.6rem;
+    min-width: 50px;
+  }
+  
+  .day-details h3.day-name {
+    font-size: 1.1rem;
+  }
+  
+  .day-details p.day-date {
+    font-size: 0.8rem;
+  }
+  
+  .day-summary {
+    font-size: 0.8rem;
+  }
+  
+  .day-content {
+    padding: 1rem;
+  }
+  
+  .meals-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Accessibility Improvements */
+.day-header:focus-visible {
+  outline: 2px solid #059669;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .day-meal-card,
+  .day-header,
+  .expand-icon,
+  .day-content {
+    transition: none;
+  }
+  
+  .day-content {
+    animation: none;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .day-meal-card {
+    border-width: 2px;
+  }
+  
+  .day-header {
+    background: white;
+  }
+  
+  .day-header.expanded {
+    background: #f0fdf4;
+  }
+} 

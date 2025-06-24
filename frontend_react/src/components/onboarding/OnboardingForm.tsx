@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { RootState, AppDispatch } from '../../store';
@@ -8,7 +8,8 @@ import {
   goToStep,
   submitOnboardingForm,
   clearError,
-  updateBasicInformation
+  updateBasicInformation,
+  resetForm
 } from '../../store/onboardingSlice';
 
 // Step components
@@ -16,24 +17,23 @@ import Step1BasicInformation from './steps/Step1BasicInformation';
 import Step2MedicalConditions from './steps/Step2MedicalConditions';
 import Step3HealthGoal from './steps/Step3HealthGoal';
 import Step4DietaryPreferences from './steps/Step4DietaryPreferences';
-import Step5AllergiesIntolerances from './steps/Step5AllergiesIntolerances';
-import Step6MealHabits from './steps/Step6MealHabits';
-import Step7Location from './steps/Step7Location';
+import Step5MealHabits from './steps/Step5MealHabits';
+import Step6Location from './steps/Step6Location';
+
+// Custom components
+import StepDropdown from '../common/StepDropdown';
+import { MealPlanDisplay } from '../mealplan';
 
 // Styled components
 import {
-  OnboardingContainer,
-  FormWrapper,
-  Header,
-  Title,
-  Subtitle,
-  ProgressBar,
-  ProgressFill,
-  StepIndicator,
-  StepDot,
+  FormContainer,
+  FormCard,
+  FormHeader,
+  FormTitle,
   FormContent,
-  ButtonGroup,
+  FormActions,
   Button,
+  StepIndicator,
   LoadingSpinner,
   SuccessMessage,
   ErrorMessage,
@@ -44,6 +44,7 @@ const OnboardingForm: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [showMealPlan, setShowMealPlan] = useState(false);
   const {
     currentStep,
     formData,
@@ -52,27 +53,54 @@ const OnboardingForm: React.FC = () => {
     error
   } = useSelector((state: RootState) => state.onboarding);
 
-  const totalSteps = 7;
+  const hasInitializedFromURL = useRef(false);
+  const totalSteps = 6;
   const progress = (currentStep / totalSteps) * 100;
 
-  // Handle URL-based navigation
+  // Handle URL-based navigation on component mount only
   useEffect(() => {
-    const stepParam = searchParams.get('step');
-    if (stepParam) {
-      const stepNumber = parseInt(stepParam, 10);
-      if (stepNumber >= 1 && stepNumber <= totalSteps && stepNumber !== currentStep) {
-        dispatch(goToStep(stepNumber));
+    if (!hasInitializedFromURL.current) {
+      console.log('Initializing from URL, searchParams:', searchParams.toString());
+      const stepParam = searchParams.get('step');
+      
+      // If we're starting at step 1, reset the form to ensure a clean start
+      if (stepParam === '1' || !stepParam) {
+        console.log('Starting fresh onboarding, resetting form');
+        dispatch(resetForm());
+      }
+      
+      if (stepParam) {
+        const stepNumber = parseInt(stepParam, 10);
+        console.log('Found step param:', stepNumber, 'currentStep:', currentStep);
+        if (stepNumber >= 1 && stepNumber <= totalSteps && stepNumber !== currentStep) {
+          console.log('Dispatching goToStep from URL:', stepNumber);
+          dispatch(goToStep(stepNumber));
+        }
+      } else {
+        // If no step parameter in URL, set it to step 1 and reset
+        console.log('No step param, resetting to step 1');
+        dispatch(resetForm());
+        setSearchParams({ step: '1' }, { replace: true });
+      }
+      hasInitializedFromURL.current = true;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  // Update URL when step changes (but avoid infinite loops)
+  useEffect(() => {
+    if (hasInitializedFromURL.current) {
+      console.log('Step change useEffect triggered, currentStep:', currentStep);
+      const currentStepParam = searchParams.get('step');
+      const currentStepString = currentStep.toString();
+      console.log('URL step param:', currentStepParam, 'current step string:', currentStepString);
+      if (currentStepParam !== currentStepString) {
+        console.log('Updating URL to step:', currentStepString);
+        setSearchParams({ step: currentStepString }, { replace: true });
       }
     }
-  }, [searchParams, dispatch, currentStep, totalSteps]);
-
-  // Update URL when step changes
-  useEffect(() => {
-    const currentStepParam = searchParams.get('step');
-    if (currentStepParam !== currentStep.toString()) {
-      setSearchParams({ step: currentStep.toString() });
-    }
-  }, [currentStep, searchParams, setSearchParams]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep]);
 
   useEffect(() => {
     if (error) {
@@ -119,7 +147,13 @@ const OnboardingForm: React.FC = () => {
   };
 
   const handleStartPlanning = () => {
-    navigate('/meals');
+    // Show the meal plan directly in the onboarding flow
+    setShowMealPlan(true);
+  };
+
+  const handleBackToSuccess = () => {
+    // Go back to success message from meal plan
+    setShowMealPlan(false);
   };
 
   const handleClose = () => {
@@ -127,9 +161,13 @@ const OnboardingForm: React.FC = () => {
   };
 
   const handleStepClick = (stepNumber: number) => {
-    // Allow direct navigation to any step
-    dispatch(goToStep(stepNumber));
-    setSearchParams({ step: stepNumber.toString() });
+    console.log('handleStepClick called with stepNumber:', stepNumber, 'currentStep:', currentStep);
+    // Only dispatch if the step is actually different
+    if (stepNumber !== currentStep && stepNumber >= 1 && stepNumber <= totalSteps) {
+      console.log('Dispatching goToStep:', stepNumber);
+      dispatch(goToStep(stepNumber));
+      // URL will be updated by the useEffect that watches currentStep
+    }
   };
 
   const renderCurrentStep = () => {
@@ -143,11 +181,9 @@ const OnboardingForm: React.FC = () => {
       case 4:
         return <Step4DietaryPreferences onNext={handleNext} />;
       case 5:
-        return <Step5AllergiesIntolerances onNext={handleNext} />;
+        return <Step5MealHabits onNext={handleNext} />;
       case 6:
-        return <Step6MealHabits onNext={handleNext} />;
-      case 7:
-        return <Step7Location onNext={handleNext} />;
+        return <Step6Location onNext={handleNext} />;
       default:
         return <Step1BasicInformation onNext={handleNext} />;
     }
@@ -159,7 +195,6 @@ const OnboardingForm: React.FC = () => {
       'Medical Conditions',
       'Health Goal',
       'Dietary Preferences',
-      'Allergies & Intolerances',
       'Meal Habits',
       'Location'
     ];
@@ -167,13 +202,18 @@ const OnboardingForm: React.FC = () => {
   };
 
   if (isCompleted) {
+    if (showMealPlan) {
+      // Show the meal plan directly
+      return <MealPlanDisplay onBack={handleBackToSuccess} />;
+    }
+
     return (
-      <OnboardingContainer>
-        <FormWrapper>
-          <Header>
-            <Title>🎉 Welcome to MealMind!</Title>
-            <Subtitle>Your personalized meal planning journey begins now</Subtitle>
-          </Header>
+      <FormContainer>
+        <FormCard>
+          <FormHeader>
+            <CloseButton onClick={handleClose} title="Close and return to main page" />
+            <FormTitle>🎉 Welcome to MealMind!</FormTitle>
+          </FormHeader>
           
           <SuccessMessage>
             <h2>Welcome to MealMind!</h2>
@@ -185,142 +225,37 @@ const OnboardingForm: React.FC = () => {
             <p>
               You're now logged in and ready to start your personalized meal planning journey.
             </p>
-            <Button variant="primary" onClick={handleStartPlanning}>
-              Start Meal Planning
-            </Button>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Button variant="primary" onClick={handleStartPlanning}>
+                🍽️ Start Meal Planning
+              </Button>
+              <Button variant="secondary" onClick={() => navigate('/meals')}>
+                📱 Go to Meals App
+              </Button>
+            </div>
           </SuccessMessage>
-        </FormWrapper>
-      </OnboardingContainer>
+        </FormCard>
+      </FormContainer>
     );
   }
 
   return (
-    <OnboardingContainer>
-      <FormWrapper>
-        <Header>
-          <CloseButton onClick={handleClose} title="Close and return to main page" />
-          <Title>MealMind Setup</Title>
-          <Subtitle>
-            Step {currentStep} of {totalSteps}: {getStepTitle()}
-          </Subtitle>
-          <ProgressBar>
-            <ProgressFill progress={progress} />
-          </ProgressBar>
-        </Header>
+    <FormContainer>
+      <FormCard>
+        <FormHeader>
+          <CloseButton onClick={handleClose} title="Close and return to main page">
+            <svg viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </CloseButton>
+          <FormTitle>MealMind Setup</FormTitle>
+        </FormHeader>
 
-        <StepIndicator>
-          {Array.from({ length: totalSteps }, (_, index) => {
-            const stepTitles = [
-              'Basic Information',
-              'Medical Conditions',
-              'Health Goal',
-              'Dietary Preferences',
-              'Allergies & Intolerances',
-              'Meal Habits',
-              'Location'
-            ];
-            return (
-              <StepDot
-                key={index + 1}
-                active={index + 1 === currentStep}
-                completed={index + 1 < currentStep}
-                onClick={() => handleStepClick(index + 1)}
-                style={{ cursor: 'pointer' }}
-                title={`Go to step ${index + 1}: ${stepTitles[index]}`}
-              />
-            );
-          })}
-        </StepIndicator>
-
-        {/* Jump to Step Dropdown */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          gap: '10px',
-          margin: '15px 0',
-          padding: '0 20px'
-        }}>
-          <label style={{ fontSize: '14px', fontWeight: '500', color: '#666' }}>
-            Jump to Step:
-          </label>
-          <select
-            value={currentStep}
-            onChange={(e) => handleStepClick(parseInt(e.target.value, 10))}
-            style={{
-              padding: '6px 12px',
-              borderRadius: '6px',
-              border: '1px solid #ddd',
-              fontSize: '14px',
-              backgroundColor: 'white',
-              cursor: 'pointer'
-            }}
-          >
-            {Array.from({ length: totalSteps }, (_, index) => {
-              const stepNumber = index + 1;
-              const stepTitles = [
-                'Basic Information',
-                'Medical Conditions',
-                'Health Goal',
-                'Dietary Preferences',
-                'Allergies & Intolerances',
-                'Meal Habits',
-                'Location'
-              ];
-              return (
-                <option key={stepNumber} value={stepNumber}>
-                  Step {stepNumber}: {stepTitles[index]}
-                </option>
-              );
-            })}
-          </select>
-        </div>
-
-        {/* Step Navigation Menu */}
-        <div style={{ 
-          display: 'flex', 
-          flexWrap: 'wrap', 
-          gap: '8px', 
-          justifyContent: 'center', 
-          margin: '20px 0',
-          padding: '0 20px'
-        }}>
-          {Array.from({ length: totalSteps }, (_, index) => {
-            const stepNumber = index + 1;
-            const stepTitles = [
-              'Basic Info',
-              'Medical Conditions',
-              'Health Goal',
-              'Dietary Preferences',
-              'Allergies',
-              'Meal Habits',
-              'Location'
-            ];
-            const isActive = stepNumber === currentStep;
-            const isCompleted = stepNumber < currentStep;
-            
-            return (
-              <button
-                key={stepNumber}
-                onClick={() => handleStepClick(stepNumber)}
-                style={{
-                  padding: '8px 12px',
-                  fontSize: '12px',
-                  borderRadius: '6px',
-                  border: isActive ? '2px solid #007bff' : '1px solid #ddd',
-                  backgroundColor: isActive ? '#007bff' : isCompleted ? '#28a745' : '#f8f9fa',
-                  color: isActive || isCompleted ? 'white' : '#666',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  fontWeight: isActive ? 'bold' : 'normal'
-                }}
-                title={`Go to Step ${stepNumber}: ${stepTitles[index]}`}
-              >
-                {stepNumber}. {stepTitles[index]}
-              </button>
-            );
-          })}
-        </div>
+        <StepDropdown
+          currentStep={currentStep}
+          totalSteps={totalSteps}
+          onStepChange={handleStepClick}
+        />
 
         <FormContent>
           {renderCurrentStep()}
@@ -332,7 +267,7 @@ const OnboardingForm: React.FC = () => {
           </ErrorMessage>
         )}
 
-        <ButtonGroup>
+        <FormActions>
           {currentStep > 1 && (
             <Button variant="secondary" onClick={handlePrevious}>
               Previous
@@ -359,9 +294,9 @@ const OnboardingForm: React.FC = () => {
               )}
             </Button>
           )}
-        </ButtonGroup>
-      </FormWrapper>
-    </OnboardingContainer>
+        </FormActions>
+      </FormCard>
+    </FormContainer>
   );
 };
 

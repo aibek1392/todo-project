@@ -10,7 +10,7 @@ import {
   FormGroup,
   Label,
   Select,
-  TextArea,
+  Textarea,
   RadioGroup,
   RadioItem,
   Radio,
@@ -18,11 +18,11 @@ import {
   TwoColumnGrid
 } from '../OnboardingForm.styles';
 
-interface Step6Props {
+interface Step5Props {
   onNext: () => void;
 }
 
-const Step6MealHabits: React.FC<Step6Props> = ({ onNext }) => {
+const Step5MealHabits: React.FC<Step5Props> = ({ onNext }) => {
   const dispatch = useDispatch();
   const mealHabits = useSelector((state: RootState) => state.onboarding.formData.mealHabits);
 
@@ -136,7 +136,7 @@ const Step6MealHabits: React.FC<Step6Props> = ({ onNext }) => {
 
         <FormGroup>
           <Label htmlFor="foodsDisliked">Foods you dislike (optional)</Label>
-          <TextArea
+          <Textarea
             id="foodsDisliked"
             placeholder="Tell us about foods you don't enjoy or want to avoid in your meal plans..."
             className={errors.foodsDisliked ? 'error' : ''}
@@ -149,4 +149,4 @@ const Step6MealHabits: React.FC<Step6Props> = ({ onNext }) => {
   );
 };
 
-export default Step6MealHabits; 
+export default Step5MealHabits; 

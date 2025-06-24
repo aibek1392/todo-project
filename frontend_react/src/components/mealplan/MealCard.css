@@ -1,0 +1,330 @@
+/* Meal Card Styles */
+.meal-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.25rem;
+  transition: all 0.2s ease;
+  height: fit-content;
+}
+
+.meal-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #d1d5db;
+}
+
+/* Meal Type Specific Colors */
+.meal-breakfast {
+  border-left: 4px solid #f59e0b;
+}
+
+.meal-lunch {
+  border-left: 4px solid #10b981;
+}
+
+.meal-dinner {
+  border-left: 4px solid #8b5cf6;
+}
+
+.meal-snack {
+  border-left: 4px solid #f97316;
+}
+
+/* Meal Header */
+.meal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.meal-type {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.meal-icon {
+  font-size: 1.2rem;
+}
+
+.meal-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.meal-calories {
+  background: #f0f9ff;
+  color: #0ea5e9;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid #e0f2fe;
+}
+
+/* Meal Content */
+.meal-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 0.75rem 0;
+  line-height: 1.4;
+}
+
+.meal-description {
+  font-size: 0.9rem;
+  color: #4b5563;
+  line-height: 1.6;
+  margin: 0 0 1rem 0;
+}
+
+.cooking-time {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin-bottom: 1rem;
+}
+
+.time-icon {
+  font-size: 1rem;
+}
+
+/* Dietary Tags */
+.dietary-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.dietary-tag {
+  background: #f3f4f6;
+  color: #374151;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+}
+
+.dietary-tag:hover {
+  background: #e5e7eb;
+  transform: translateY(-1px);
+}
+
+.tag-emoji {
+  font-size: 0.8rem;
+}
+
+/* Special dietary tag colors */
+.dietary-tag:has(.tag-emoji:contains("🌱")),
+.dietary-tag:has(.tag-emoji:contains("🌿")) {
+  background: #f0fdf4;
+  color: #15803d;
+  border-color: #bbf7d0;
+}
+
+.dietary-tag:has(.tag-emoji:contains("🚫")) {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.dietary-tag:has(.tag-emoji:contains("💪")) {
+  background: #eff6ff;
+  color: #2563eb;
+  border-color: #dbeafe;
+}
+
+.dietary-tag:has(.tag-emoji:contains("⚡")),
+.dietary-tag:has(.tag-emoji:contains("😊")) {
+  background: #fffbeb;
+  color: #d97706;
+  border-color: #fed7aa;
+}
+
+/* Ingredients Section */
+.ingredients-section {
+  border-top: 1px solid #f3f4f6;
+  padding-top: 1rem;
+}
+
+.ingredients-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  background: none;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  padding: 0.5rem 0;
+  transition: color 0.2s ease;
+}
+
+.ingredients-toggle:hover {
+  color: #059669;
+}
+
+.ingredients-toggle:focus {
+  outline: 2px solid #059669;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.toggle-icon {
+  color: #6b7280;
+  font-size: 0.8rem;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.toggle-icon.rotated {
+  transform: rotate(180deg);
+  color: #059669;
+}
+
+.ingredients-list {
+  margin-top: 0.75rem;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ingredients-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 0.75rem;
+  border: 1px solid #f3f4f6;
+}
+
+.ingredient-item {
+  font-size: 0.85rem;
+  color: #374151;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f3f4f6;
+  position: relative;
+  padding-left: 1rem;
+  line-height: 1.4;
+}
+
+.ingredient-item:before {
+  content: '•';
+  color: #059669;
+  font-weight: bold;
+  position: absolute;
+  left: 0;
+}
+
+.ingredient-item:last-child {
+  border-bottom: none;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 640px) {
+  .meal-card {
+    padding: 1rem;
+  }
+  
+  .meal-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .meal-calories {
+    align-self: flex-start;
+  }
+  
+  .meal-title {
+    font-size: 1.1rem;
+  }
+  
+  .meal-description {
+    font-size: 0.85rem;
+  }
+  
+  .dietary-tags {
+    gap: 0.25rem;
+  }
+  
+  .dietary-tag {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.6rem;
+  }
+}
+
+/* Accessibility Improvements */
+@media (prefers-reduced-motion: reduce) {
+  .meal-card,
+  .dietary-tag,
+  .toggle-icon,
+  .ingredients-list {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .meal-card {
+    border-width: 2px;
+  }
+  
+  .dietary-tag {
+    border-width: 2px;
+  }
+  
+  .ingredients-list ul {
+    border-width: 2px;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .meal-card {
+    break-inside: avoid;
+    border: 1px solid #000;
+    box-shadow: none;
+  }
+  
+  .ingredients-toggle {
+    display: none;
+  }
+  
+  .ingredients-list {
+    display: block !important;
+    animation: none;
+  }
+  
+  .dietary-tag {
+    background: white !important;
+    border: 1px solid #000 !important;
+    color: #000 !important;
+  }
+} 

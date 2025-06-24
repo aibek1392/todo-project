@@ -13,7 +13,7 @@ const api = axios.create({
 // Add token to requests if it exists
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
-  if (token) {
+  if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
@@ -21,6 +21,11 @@ api.interceptors.request.use((config) => {
 
 // Auth API
 export const authAPI = {
+  signup: async (userData: { email: string; password: string; full_name: string }): Promise<AuthResponse> => {
+    const response = await api.post('/auth/signup', userData);
+    return response.data;
+  },
+
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     const response = await api.post('/auth/login', credentials);
     return response.data;
@@ -60,9 +65,10 @@ export const userProfileAPI = {
   completeRegistration: async (profileData: OnboardingFormData): Promise<any> => {
     // Transform the frontend data structure to match the backend API
     const backendData = {
-      // Authentication fields
-      username: profileData.basicInformation.username,
+      // Authentication fields - create dummy email from username
+      email: `${profileData.basicInformation.username}@temp.com`,
       password: profileData.basicInformation.password,
+      name: profileData.basicInformation.username,
       
       // Basic information
       height_ft: profileData.basicInformation.height,
@@ -71,28 +77,16 @@ export const userProfileAPI = {
       location: profileData.location.zipCodeOrCity,
       
       // Health and dietary information
-      health_goal: profileData.healthGoal.goal,
-      custom_goal: profileData.healthGoal.customGoal,
+      health_goals: [profileData.healthGoal.goal],
+      custom_health_goal: profileData.healthGoal.customGoal,
       
-      // Medical conditions with details
-      medical_conditions: {
-        conditions: profileData.medicalConditions.conditions || [],
-        diabetes_insulin: profileData.medicalConditions.diabetesInsulin,
-        pcos_hormonal: profileData.medicalConditions.pcosHormonal,
-        hbp_salt_intake: profileData.medicalConditions.hbpSaltIntake,
-        ibd_type: profileData.medicalConditions.ibdType,
-        uc_condition: profileData.medicalConditions.ucCondition,
-        other_condition: profileData.medicalConditions.otherCondition
-      },
-      
-      // Preferences and restrictions
+      // Preferences
       preferences: {
         diet: profileData.dietaryPreferences.preferences || [],
-        custom_diet: profileData.dietaryPreferences.customPreference,
         dislikes: profileData.mealHabits.foodsDisliked ? 
           profileData.mealHabits.foodsDisliked.split(',').map((item: string) => item.trim()) : [],
         allergies: profileData.allergiesIntolerances.allergies || [],
-        other_allergy: profileData.allergiesIntolerances.otherAllergy,
+        conditions: profileData.medicalConditions.conditions || [],
         meals_per_day: profileData.mealHabits.mealsPerDay,
         snacks: profileData.mealHabits.snacks,
         cooks_often: profileData.mealHabits.cooksOften
@@ -101,7 +95,7 @@ export const userProfileAPI = {
 
     console.log('Sending complete registration data:', backendData);
     
-    const response = await api.post('/auth/complete-registration', backendData);
+    const response = await api.post('/complete_user_registration', backendData);
     return response.data;
   },
 
@@ -211,6 +205,39 @@ export const userProfileAPI = {
 
   getProfile: async (): Promise<any> => {
     const response = await api.get('/user_profile');
+    return response.data;
+  },
+};
+
+// Meal Planning API
+export const mealPlanAPI = {
+  // Generate a personalized 7-day meal plan
+  generateMealPlan: async (forceRefresh: boolean = false): Promise<any> => {
+    const response = await api.post(`/generate-meal-plan?force_refresh=${forceRefresh}`);
+    return response.data;
+  },
+
+  // Get user profile summary for meal planning
+  getProfileSummary: async (): Promise<any> => {
+    const response = await api.get('/user-profile-for-meal-planning');
+    return response.data;
+  },
+
+  // Get meal plan cache statistics
+  getCacheStats: async (): Promise<any> => {
+    const response = await api.get('/meal-plan-cache/stats');
+    return response.data;
+  },
+
+  // Clear meal plan cache for current user
+  clearCache: async (): Promise<any> => {
+    const response = await api.delete('/meal-plan-cache');
+    return response.data;
+  },
+
+  // Test meal planning functionality (development only)
+  testMealPlan: async (): Promise<any> => {
+    const response = await api.post('/test-meal-plan');
     return response.data;
   },
 };
