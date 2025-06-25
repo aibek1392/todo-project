@@ -74,6 +74,84 @@ const MealPlanDisplay: React.FC<MealPlanDisplayProps> = ({ onBack }) => {
     }
   };
 
+  const handleSaveMealPlan = async () => {
+    if (!mealPlan) return;
+    
+    try {
+      setError(null);
+      
+      // Convert the meal plan to the format expected by the backend
+      const storageData = {
+        start_date: new Date().toISOString().split('T')[0], // Today's date
+        mealPlan: mealPlan.meal_plan.map((dayMeals, index) => ({
+          day: dayMeals.day,
+          meals: [
+            ...(dayMeals.breakfast ? [{
+              meal_type: 'breakfast',
+              title: dayMeals.breakfast.title,
+              description: dayMeals.breakfast.description,
+              calories: dayMeals.breakfast.calories || 0,
+              cook_time: dayMeals.breakfast.cooking_time,
+              tags: dayMeals.breakfast.dietary_tags,
+              ingredients: dayMeals.breakfast.ingredients
+            }] : []),
+            ...(dayMeals.lunch ? [{
+              meal_type: 'lunch',
+              title: dayMeals.lunch.title,
+              description: dayMeals.lunch.description,
+              calories: dayMeals.lunch.calories || 0,
+              cook_time: dayMeals.lunch.cooking_time,
+              tags: dayMeals.lunch.dietary_tags,
+              ingredients: dayMeals.lunch.ingredients
+            }] : []),
+            ...(dayMeals.dinner ? [{
+              meal_type: 'dinner',
+              title: dayMeals.dinner.title,
+              description: dayMeals.dinner.description,
+              calories: dayMeals.dinner.calories || 0,
+              cook_time: dayMeals.dinner.cooking_time,
+              tags: dayMeals.dinner.dietary_tags,
+              ingredients: dayMeals.dinner.ingredients
+            }] : []),
+            ...(dayMeals.snacks ? dayMeals.snacks.map(snack => ({
+              meal_type: 'snack',
+              title: snack.title,
+              description: snack.description,
+              calories: snack.calories || 0,
+              cook_time: snack.cooking_time,
+              tags: snack.dietary_tags,
+              ingredients: snack.ingredients
+            })) : [])
+          ]
+        })),
+        // Convert shopping list to the format expected by backend
+        shoppingList: Object.entries(groupedShoppingList).reduce((acc, [category, items]) => {
+          acc[category] = items.map(item => ({
+            item_name: item.item,
+            quantity: item.quantity,
+            price_range: item.estimated_cost || ""
+          }));
+          return acc;
+        }, {} as Record<string, any[]>)
+      };
+      
+      console.log('Saving meal plan to database:', storageData);
+      const result = await mealPlanAPI.storeMealPlan(storageData);
+      console.log('Meal plan saved successfully:', result);
+      
+      // Show success message (you could add a toast notification here)
+      alert('Meal plan saved to database successfully!');
+      
+    } catch (err: any) {
+      console.error('Failed to save meal plan:', err);
+      console.error('Error response:', err.response?.data);
+      console.error('Error status:', err.response?.status);
+      
+      const errorMessage = err.response?.data?.detail || err.message || 'Unknown error';
+      setError(`Failed to save meal plan to database: ${errorMessage}`);
+    }
+  };
+
   useEffect(() => {
     console.log('MealPlanDisplay mounted. Auth state:', { user: !!user, token: !!token });
     generateMealPlan();
@@ -180,6 +258,13 @@ const MealPlanDisplay: React.FC<MealPlanDisplayProps> = ({ onBack }) => {
             aria-label="Clear cache and generate fresh plan"
           >
             🗑️ Clear Cache
+          </button>
+          <button 
+            className="btn btn-primary"
+            onClick={handleSaveMealPlan}
+            aria-label="Save meal plan to database"
+          >
+            💾 Save to Database
           </button>
         </div>
       </div>

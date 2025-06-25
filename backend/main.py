@@ -9,6 +9,11 @@ import bcrypt
 from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Load environment variables from .env file
 load_dotenv()
@@ -1155,3 +1160,460 @@ async def test_meal_planning():
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Test failed: {str(e)}")
+
+async def store_meal_plan_in_database(user_id: int, meal_plan_data: dict) -> dict:
+    """
+    Store a generated meal plan in Supabase database with transaction-like behavior
+    
+    Args:
+        user_id: The authenticated user's ID
+        meal_plan_data: The meal plan data in the expected format:
+        {
+            "start_date": "2025-06-30",
+            "mealPlan": [
+                {
+                    "day": "Monday",
+                    "meals": [
+                        {
+                            "meal_type": "breakfast",
+                            "title": "Oatmeal with Berries",
+                            "description": "...",
+                            "calories": 300,
+                            "cook_time": 10,
+                            "tags": ["vegetarian", "gluten-free"],
+                            "ingredients": ["1 cup rolled oats", ...]
+                        }
+                    ]
+                }
+            ],
+            "shoppingList": {
+                "Dairy": [
+                    {"item_name": "Greek yogurt", "quantity": "1 quart", "price_range": "$4–5"}
+                ]
+            }
+        }
+        
+    Returns:
+        dict: Success message and meal_plan_id
+    """
+    meal_plan_id = None
+    created_recipe_ids = []
+    created_meal_plan_item_ids = []
+    created_shopping_item_ids = []
+    
+    try:
+        if supabase is None:
+            raise HTTPException(status_code=500, detail="Database not configured")
+        
+        import re
+        from datetime import datetime, timedelta
+        
+        # Extract data from meal plan
+        start_date = meal_plan_data.get("start_date")
+        meal_plan = meal_plan_data.get("mealPlan", [])
+        shopping_list = meal_plan_data.get("shoppingList", {})
+        
+        if not start_date:
+            raise ValueError("start_date is required")
+        
+        # Parse start_date and calculate end_date (7-day plan)
+        start_date_obj = datetime.strptime(start_date, "%Y-%m-%d").date()
+        end_date_obj = start_date_obj + timedelta(days=6)
+        
+        # Helper function to parse price range
+        def parse_price_range(price_range: str) -> tuple:
+            """Parse price range like '$4–5' or '$3-4' into (min, max)"""
+            if not price_range:
+                return None, None
+            
+            # Remove $ and spaces, handle both – and - separators
+            clean_price = price_range.replace('$', '').replace(' ', '')
+            
+            # Try different patterns
+            patterns = [
+                r'(\d+(?:\.\d{2})?)[–-](\d+(?:\.\d{2})?)',  # $4–5 or $4-5
+                r'(\d+(?:\.\d{2})?)',  # Just $4
+            ]
+            
+            for pattern in patterns:
+                match = re.search(pattern, clean_price)
+                if match:
+                    if len(match.groups()) == 2:
+                        return float(match.group(1)), float(match.group(2))
+                    else:
+                        price = float(match.group(1))
+                        return price, price
+            
+            return None, None
+        
+        # Helper function to normalize dietary tags
+        def normalize_tags(tags: list) -> list:
+            """Normalize dietary tags"""
+            if not tags:
+                return []
+            
+            tag_mapping = {
+                '🚫🌾': 'gluten-free',
+                '🌱': 'vegan',
+                '🥛': 'vegetarian',
+                '🐟': 'pescatarian',
+                '🥩': 'keto',
+                '🌾': 'whole-grain',
+            }
+            
+            normalized = []
+            for tag in tags:
+                # Apply mapping if exists, otherwise keep original (lowercased)
+                normalized_tag = tag_mapping.get(tag, str(tag).lower().strip())
+                if normalized_tag:
+                    normalized.append(normalized_tag)
+            
+            return normalized
+        
+        # Start transaction-like operations
+        logger.info(f"📝 Storing meal plan for user {user_id} from {start_date} to {end_date_obj}")
+        
+        # 1. Insert meal plan
+        meal_plan_insert = {
+            "user_id": user_id,
+            "start_date": start_date,
+            "end_date": str(end_date_obj),
+            "is_basket": False
+        }
+        
+        meal_plan_response = supabase.table('meal_plans').insert(meal_plan_insert).execute()
+        
+        if not meal_plan_response.data:
+            raise Exception("Failed to create meal plan record")
+        
+        meal_plan_id = meal_plan_response.data[0]['id']
+        logger.info(f"✅ Created meal plan with ID: {meal_plan_id}")
+        
+        # 2. Process meals and recipes
+        recipe_cache = {}  # Cache to avoid duplicate recipe lookups
+        
+        for day_index, day_data in enumerate(meal_plan):
+            day_name = day_data.get("day", f"Day {day_index + 1}")
+            meals = day_data.get("meals", [])
+            
+            # Handle different meal plan structures
+            if not meals:
+                # Try alternate structure with direct meal properties (for backwards compatibility)
+                meal_types = ['breakfast', 'lunch', 'dinner', 'snacks']
+                for meal_type in meal_types:
+                    if meal_type in day_data:
+                        meal_data = day_data[meal_type]
+                        if meal_data:
+                            if meal_type == 'snacks' and isinstance(meal_data, list):
+                                # Handle snacks as array
+                                for snack in meal_data:
+                                    meals.append({
+                                        'meal_type': 'snack',
+                                        **snack
+                                    })
+                            else:
+                                meals.append({
+                                    'meal_type': meal_type,
+                                    **meal_data
+                                })
+            
+            for meal in meals:
+                meal_type = meal.get("meal_type", "unknown")
+                title = meal.get("title", "")
+                description = meal.get("description", "")
+                calories = meal.get("calories", 0)
+                cook_time = meal.get("cook_time", meal.get("cooking_time", "0 minutes"))
+                tags = meal.get("tags", meal.get("dietary_tags", []))
+                ingredients = meal.get("ingredients", [])
+                
+                if not title:
+                    continue
+                
+                # Parse cook time (extract minutes)
+                cook_time_minutes = 0
+                if isinstance(cook_time, str):
+                    time_match = re.search(r'(\d+)', cook_time)
+                    if time_match:
+                        cook_time_minutes = int(time_match.group(1))
+                elif isinstance(cook_time, (int, float)):
+                    cook_time_minutes = int(cook_time)
+                
+                # Normalize tags
+                normalized_tags = normalize_tags(tags)
+                
+                # Check if recipe already exists (by title)
+                recipe_id = recipe_cache.get(title)
+                
+                if not recipe_id:
+                    # Check database for existing recipe
+                    existing_recipe = supabase.table('recipes').select("id").eq("name", title).execute()
+                    
+                    if existing_recipe.data:
+                        recipe_id = existing_recipe.data[0]['id']
+                        recipe_cache[title] = recipe_id
+                    else:
+                        # Create new recipe
+                        recipe_insert = {
+                            "name": title,
+                            "description": description,
+                            "prep_time_minutes": 0,  # Not provided in current structure
+                            "cook_time_minutes": cook_time_minutes,
+                            "total_calories": calories,
+                            "tags": normalized_tags,
+                            "ingredients": ingredients
+                        }
+                        
+                        recipe_response = supabase.table('recipes').insert(recipe_insert).execute()
+                        
+                        if not recipe_response.data:
+                            raise Exception(f"Failed to create recipe: {title}")
+                        
+                        recipe_id = recipe_response.data[0]['id']
+                        recipe_cache[title] = recipe_id
+                        logger.info(f"✅ Created recipe: {title} (ID: {recipe_id})")
+                
+                # Insert meal plan item (calculate actual date for the day)
+                day_date = start_date_obj + timedelta(days=day_index)
+                meal_plan_item_insert = {
+                    "meal_plan_id": meal_plan_id,
+                    "day": str(day_date),  # Actual date (YYYY-MM-DD format)
+                    "meal_type": meal_type,
+                    "recipe_id": recipe_id
+                }
+                
+                meal_plan_item_response = supabase.table('meal_plan_items').insert(meal_plan_item_insert).execute()
+                
+                if not meal_plan_item_response.data:
+                    raise Exception(f"Failed to create meal plan item for {title}")
+                
+                # Track created items for potential rollback
+                created_meal_plan_item_ids.append(meal_plan_item_response.data[0]['id'])
+        
+        # 3. Process shopping list
+        shopping_items_created = 0
+        
+        for category, items in shopping_list.items():
+            for item in items:
+                item_name = item.get("item_name", item.get("item", ""))
+                quantity = item.get("quantity", "1 item")
+                price_range = item.get("price_range", item.get("estimated_cost", ""))
+                
+                if not item_name:
+                    continue
+                
+                # Parse price range
+                price_min, price_max = parse_price_range(price_range)
+                
+                shopping_item_insert = {
+                    "meal_plan_id": meal_plan_id,
+                    "category": category,
+                    "item_name": item_name,
+                    "quantity": quantity,
+                    "price_min": price_min,
+                    "price_max": price_max,
+                    "is_checked": False
+                }
+                
+                shopping_item_response = supabase.table('shopping_list_items').insert(shopping_item_insert).execute()
+                
+                if shopping_item_response.data:
+                    shopping_items_created += 1
+                    # Track created items for potential rollback
+                    created_shopping_item_ids.append(shopping_item_response.data[0]['id'])
+        
+        logger.info(f"✅ Stored meal plan successfully!")
+        logger.info(f"📊 Created {len(recipe_cache)} recipes, {shopping_items_created} shopping items")
+        
+        return {
+            "success": True,
+            "message": "Meal plan stored successfully",
+            "meal_plan_id": meal_plan_id,
+            "recipes_created": len(recipe_cache),
+            "shopping_items_created": shopping_items_created,
+            "start_date": start_date,
+            "end_date": str(end_date_obj)
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Error storing meal plan: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        # Rollback: Clean up any created records
+        logger.warning("🔄 Rolling back created records...")
+        
+        try:
+            # Delete shopping list items
+            if created_shopping_item_ids:
+                for item_id in created_shopping_item_ids:
+                    supabase.table('shopping_list_items').delete().eq('id', item_id).execute()
+                logger.info(f"🗑️ Rolled back {len(created_shopping_item_ids)} shopping items")
+            
+            # Delete meal plan items
+            if created_meal_plan_item_ids:
+                for item_id in created_meal_plan_item_ids:
+                    supabase.table('meal_plan_items').delete().eq('id', item_id).execute()
+                logger.info(f"🗑️ Rolled back {len(created_meal_plan_item_ids)} meal plan items")
+            
+            # Delete meal plan (this will cascade delete related items)
+            if meal_plan_id:
+                supabase.table('meal_plans').delete().eq('id', meal_plan_id).execute()
+                logger.info(f"🗑️ Rolled back meal plan {meal_plan_id}")
+            
+            # Note: We don't delete recipes as they can be reused by other meal plans
+            
+        except Exception as rollback_error:
+            logger.error(f"❌ Error during rollback: {str(rollback_error)}")
+        
+        raise Exception(f"Failed to store meal plan: {str(e)}")
+
+
+@app.post("/api/store-meal-plan")
+async def store_meal_plan_endpoint(
+    meal_plan_data: dict,
+    current_user_id: int = Depends(get_current_user)
+):
+    """
+    Store a generated meal plan in the database
+    
+    Expected format:
+    {
+        "start_date": "2025-06-30",
+        "mealPlan": [
+            {
+                "day": "Monday",
+                "meals": [
+                    {
+                        "meal_type": "breakfast",
+                        "title": "Oatmeal with Berries",
+                        "description": "A healthy breakfast...",
+                        "calories": 300,
+                        "cook_time": 10,
+                        "tags": ["vegetarian", "gluten-free"],
+                        "ingredients": ["1 cup rolled oats", "2 cups water", ...]
+                    }
+                ]
+            }
+        ],
+        "shoppingList": {
+            "Dairy": [
+                {"item_name": "Greek yogurt", "quantity": "1 quart", "price_range": "$4–5"}
+            ],
+            "Produce": [
+                {"item_name": "Strawberries", "quantity": "1 pint", "price_range": "$3–4"}
+            ]
+        }
+    }
+    """
+    try:
+        logger.info(f"🔄 Storing meal plan for user {current_user_id}")
+        logger.info(f"📋 Meal plan data keys: {list(meal_plan_data.keys())}")
+        
+        result = await store_meal_plan_in_database(current_user_id, meal_plan_data)
+        return result
+    except Exception as e:
+        logger.error(f"❌ Store meal plan endpoint error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/generate-and-store-meal-plan")
+async def generate_and_store_meal_plan(
+    start_date: str = Query(..., description="Start date for meal plan (YYYY-MM-DD)"),
+    force_refresh: bool = Query(False, description="Force refresh of meal plan, bypassing cache"),
+    current_user_id: int = Depends(get_current_user)
+):
+    """
+    Generate a meal plan and automatically store it in the database
+    
+    This combines meal plan generation with database storage
+    """
+    try:
+        # Get user's profile from database
+        if supabase is None:
+            raise HTTPException(status_code=500, detail="Database not configured for meal planning")
+        
+        # Fetch user profile
+        profile_response = supabase.table('user_profiles').select("*").eq("user_id", current_user_id).execute()
+        
+        if not profile_response.data:
+            raise HTTPException(status_code=404, detail="User profile not found. Please complete onboarding first.")
+        
+        profile_data = profile_response.data[0]
+        
+        # Convert database profile to the format expected by meal planner
+        # Safely get preferences with null checking
+        preferences = profile_data.get("preferences") or {}
+        
+        user_profile = {
+            "basicInformation": {
+                "username": profile_data.get("name", "User"),
+                "height": profile_data.get("height_ft", 5.5),
+                "weight": profile_data.get("weight_lbs", 150),
+                "activityLevel": profile_data.get("activity_level", "Moderate")
+            },
+            "medicalConditions": {"conditions": preferences.get("conditions", []) if preferences else []},
+            "healthGoal": {
+                "goal": profile_data.get("health_goals", ["General health"])[0] if profile_data.get("health_goals") else "General health"
+            },
+            "dietaryPreferences": {
+                "preferences": preferences.get("diet", []) if preferences else []
+            },
+            "allergiesIntolerances": {
+                "allergies": preferences.get("allergies", []) if preferences else []
+            },
+            "mealHabits": {
+                "mealsPerDay": preferences.get("meals_per_day", 3) if preferences else 3,
+                "snacks": preferences.get("snacks", False) if preferences else False,
+                "cooksOften": preferences.get("cooks_often", True) if preferences else True,
+                "foodsDisliked": ", ".join(preferences.get("dislikes", [])) if preferences and preferences.get("dislikes") else ""
+            },
+            "location": {
+                "zipCodeOrCity": profile_data.get("location", "United States")
+            }
+        }
+        
+        print(f"🍽️ Generating and storing meal plan for user {current_user_id}")
+        
+        # Generate meal plan
+        meal_plan_response = await generate_meal_plan(user_profile, force_refresh=force_refresh)
+        
+        # Convert to storage format
+        storage_data = {
+            "start_date": start_date,
+            "mealPlan": meal_plan_response.meal_plan,
+            "shoppingList": {}
+        }
+        
+        # Convert shopping list to grouped format
+        for item in meal_plan_response.shopping_list:
+            category = item.category
+            if category not in storage_data["shoppingList"]:
+                storage_data["shoppingList"][category] = []
+            
+            storage_data["shoppingList"][category].append({
+                "item_name": item.item,
+                "quantity": item.quantity,
+                "price_range": item.estimated_cost or ""
+            })
+        
+        # Store in database
+        storage_result = await store_meal_plan_in_database(current_user_id, storage_data)
+        
+        return {
+            "meal_plan": meal_plan_response,
+            "storage_result": storage_result,
+            "message": "Meal plan generated and stored successfully"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error in generate and store: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to generate and store meal plan: {str(e)}")
+
+
+# Test endpoint for meal planning (development only)

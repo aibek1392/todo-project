@@ -217,6 +217,18 @@ export const mealPlanAPI = {
     return response.data;
   },
 
+  // Store a meal plan in the database
+  storeMealPlan: async (mealPlanData: any): Promise<any> => {
+    const response = await api.post('/store-meal-plan', mealPlanData);
+    return response.data;
+  },
+
+  // Generate and store meal plan in one call
+  generateAndStoreMealPlan: async (startDate: string, forceRefresh: boolean = false): Promise<any> => {
+    const response = await api.post(`/generate-and-store-meal-plan?start_date=${startDate}&force_refresh=${forceRefresh}`);
+    return response.data;
+  },
+
   // Get user profile summary for meal planning
   getProfileSummary: async (): Promise<any> => {
     const response = await api.get('/user-profile-for-meal-planning');
