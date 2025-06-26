@@ -1,332 +1,227 @@
-/* Main Meal Plan Display Styles */
+/* Main Meal Plan Display Styles with Tailwind and Dark Mode */
 .meal-plan-container {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 1rem;
+  @apply max-w-7xl mx-auto p-4 min-h-screen;
   background: linear-gradient(135deg, #f8fffe 0%, #f0f9ff 100%);
-  min-height: 100vh;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.dark .meal-plan-container {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
 }
 
 /* Header Section */
 .meal-plan-header {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  @apply bg-white dark:bg-gray-800 rounded-xl p-6 mb-8 shadow-2xl flex flex-col gap-4;
 }
 
 .header-content {
-  text-align: center;
+  @apply text-center;
 }
 
 .meal-plan-title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: #1f2937;
-  margin: 0 0 0.5rem 0;
+  @apply text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-2;
   background: linear-gradient(135deg, #059669 0%, #10b981 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
+.dark .meal-plan-title {
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 .meal-plan-subtitle {
-  font-size: 1.1rem;
-  color: #6b7280;
-  margin: 0;
+  @apply text-lg text-gray-600 dark:text-gray-400;
 }
 
 .header-actions {
-  display: flex;
-  justify-content: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
+  @apply flex justify-center gap-3 flex-wrap;
 }
 
 /* Summary Stats */
 .meal-plan-summary {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
+  @apply grid grid-cols-1 md:grid-cols-3 gap-4 mb-8;
 }
 
 .summary-card {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  text-align: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e5e7eb;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.summary-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  @apply bg-white dark:bg-gray-800 rounded-xl p-6 text-center shadow-xl border border-gray-200 dark:border-gray-700 transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl;
 }
 
 .summary-card h3 {
-  font-size: 1rem;
-  margin: 0 0 0.5rem 0;
-  color: #374151;
-  font-weight: 600;
+  @apply text-base font-semibold text-gray-700 dark:text-gray-300 mb-2;
 }
 
 .summary-card p {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin: 0;
-  color: #059669;
+  @apply text-2xl font-bold text-green-600 dark:text-green-400;
 }
 
 /* Main Content Layout */
 .meal-plan-content {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 2rem;
+  @apply grid grid-cols-1 lg:grid-cols-3 gap-8;
 }
 
 .section-title {
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: #1f2937;
-  margin: 0 0 1.5rem 0;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  @apply text-3xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2;
 }
 
 /* Meal Plan Section */
 .meal-plan-section {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  @apply lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl p-6 shadow-xl border border-gray-200 dark:border-gray-700;
 }
 
 .meal-plan-days {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  @apply flex flex-col gap-4;
 }
 
 /* Shopping List Section */
 .shopping-list-section {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  @apply bg-white dark:bg-gray-800 rounded-xl p-6 shadow-xl border border-gray-200 dark:border-gray-700;
 }
 
 /* Additional Information */
 .meal-plan-extras {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
-  margin-top: 2rem;
+  @apply grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8;
 }
 
 .nutritional-summary,
 .preparation-tips {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  @apply bg-white dark:bg-gray-800 rounded-xl p-6 shadow-xl border border-gray-200 dark:border-gray-700;
 }
 
 .extras-title {
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: #1f2937;
-  margin: 0 0 1rem 0;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  @apply text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2;
 }
 
 /* Nutritional Summary */
 .nutrition-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
+  @apply flex flex-wrap gap-3;
 }
 
 .nutrition-tag {
-  background: #f0f9ff;
-  border: 1px solid #0ea5e9;
-  border-radius: 20px;
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  @apply bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-full px-4 py-2 text-sm flex items-center gap-2 transition-colors;
 }
 
 .nutrition-key {
-  font-weight: 600;
-  color: #0369a1;
+  @apply font-semibold text-blue-700 dark:text-blue-300;
 }
 
 .nutrition-value {
-  color: #0ea5e9;
+  @apply text-blue-600 dark:text-blue-400;
 }
 
 /* Preparation Tips */
 .tips-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+  @apply list-none p-0 m-0 space-y-3;
 }
 
 .tip-item {
-  padding: 0.75rem 0;
-  border-bottom: 1px solid #f3f4f6;
-  font-size: 1rem;
-  line-height: 1.6;
-  color: #374151;
-  position: relative;
-  padding-left: 1.5rem;
+  @apply py-3 border-b border-gray-200 dark:border-gray-700 text-base leading-relaxed text-gray-700 dark:text-gray-300 relative pl-6;
 }
 
 .tip-item:before {
   content: '💡';
-  position: absolute;
-  left: 0;
+  @apply absolute left-0 top-3;
   top: 0.75rem;
 }
 
 .tip-item:last-child {
-  border-bottom: none;
+  @apply border-b-0;
 }
 
 /* Button Styles */
 .btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  text-decoration: none;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
+  @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold text-sm no-underline border-0 cursor-pointer transition-all duration-200 whitespace-nowrap;
 }
 
 .btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+  @apply opacity-60 cursor-not-allowed;
 }
 
 .btn-primary {
-  background: #059669;
-  color: white;
+  @apply bg-green-600 dark:bg-green-700 text-white hover:bg-green-700 dark:hover:bg-green-600;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #047857;
-  transform: translateY(-1px);
+  @apply -translate-y-0.5;
 }
 
 .btn-secondary {
-  background: #6b7280;
-  color: white;
+  @apply bg-gray-500 dark:bg-gray-600 text-white hover:bg-gray-600 dark:hover:bg-gray-500;
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: #4b5563;
-  transform: translateY(-1px);
+  @apply -translate-y-0.5;
 }
 
 .btn-outline {
-  background: transparent;
-  color: #059669;
-  border: 2px solid #059669;
+  @apply bg-transparent text-green-600 dark:text-green-400 border-2 border-green-600 dark:border-green-400 hover:bg-green-600 dark:hover:bg-green-500 hover:text-white;
 }
 
 .btn-outline:hover:not(:disabled) {
-  background: #059669;
-  color: white;
-  transform: translateY(-1px);
+  @apply -translate-y-0.5;
+}
+
+.btn-success {
+  @apply bg-gradient-to-r from-emerald-500 to-green-600 text-white hover:from-green-600 hover:to-emerald-700;
+}
+
+.btn-success:hover:not(:disabled) {
+  @apply -translate-y-0.5;
 }
 
 .btn-sm {
-  padding: 0.5rem 1rem;
-  font-size: 0.8rem;
+  @apply px-4 py-2 text-xs;
 }
 
 .btn.loading {
-  opacity: 0.7;
-  cursor: not-allowed;
+  @apply opacity-70 cursor-not-allowed;
+}
+
+/* Loading Spinner */
+.spinner {
+  @apply w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin;
 }
 
 /* Responsive Design */
 @media (min-width: 768px) {
   .meal-plan-container {
-    padding: 2rem;
+    @apply p-8;
   }
   
   .meal-plan-header {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
+    @apply flex-row justify-between items-center;
   }
   
   .header-content {
-    text-align: left;
+    @apply text-left;
   }
   
   .header-actions {
-    justify-content: flex-end;
-  }
-}
-
-@media (min-width: 1024px) {
-  .meal-plan-content {
-    grid-template-columns: 2fr 1fr;
-  }
-  
-  .meal-plan-extras {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-@media (min-width: 1200px) {
-  .meal-plan-summary {
-    grid-template-columns: repeat(3, 1fr);
+    @apply justify-end;
   }
 }
 
 /* Print Styles */
 @media print {
   .meal-plan-container {
-    background: white;
+    @apply bg-white p-0;
     box-shadow: none;
-    padding: 0;
   }
   
   .header-actions,
   .btn {
-    display: none;
+    @apply hidden;
   }
   
   .meal-plan-content {
-    grid-template-columns: 1fr;
+    @apply grid-cols-1;
   }
   
   .summary-card,
   .meal-plan-section,
   .shopping-list-section {
-    box-shadow: none;
-    border: 1px solid #e5e7eb;
+    @apply shadow-none border border-gray-300;
   }
 } 

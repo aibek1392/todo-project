@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { MealPlanResponse, ShoppingItem } from '../../types/mealPlan';
 import { mealPlanAPI } from '../../services/api';
 import { RootState } from '../../store';
+import { useToast } from '../../hooks/useToast';
 import DayMealCard from './DayMealCard';
 import ShoppingListSection from './ShoppingListSection';
 import LoadingSpinner from './LoadingSpinner';
@@ -17,10 +18,13 @@ interface MealPlanDisplayProps {
 const MealPlanDisplay: React.FC<MealPlanDisplayProps> = ({ onBack }) => {
   const navigate = useNavigate();
   const { user, token } = useSelector((state: RootState) => state.auth);
+  const { showToast } = useToast();
   const [mealPlan, setMealPlan] = useState<MealPlanResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
 
   const generateMealPlan = async (forceRefresh: boolean = false) => {
     try {
@@ -42,6 +46,9 @@ const MealPlanDisplay: React.FC<MealPlanDisplayProps> = ({ onBack }) => {
       const response = await mealPlanAPI.generateMealPlan(forceRefresh);
       console.log('Meal plan response:', response);
       setMealPlan(response);
+      
+      // Reset save state when new meal plan is generated
+      setIsSaved(false);
     } catch (err: any) {
       console.error('Meal plan generation error:', err);
       
@@ -75,9 +82,10 @@ const MealPlanDisplay: React.FC<MealPlanDisplayProps> = ({ onBack }) => {
   };
 
   const handleSaveMealPlan = async () => {
-    if (!mealPlan) return;
+    if (!mealPlan || isSaved || isSaving) return;
     
     try {
+      setIsSaving(true);
       setError(null);
       
       // Convert the meal plan to the format expected by the backend
@@ -139,8 +147,16 @@ const MealPlanDisplay: React.FC<MealPlanDisplayProps> = ({ onBack }) => {
       const result = await mealPlanAPI.storeMealPlan(storageData);
       console.log('Meal plan saved successfully:', result);
       
-      // Show success message (you could add a toast notification here)
-      alert('Meal plan saved to database successfully!');
+      // Mark as saved
+      setIsSaved(true);
+      
+      // Show success toast
+      showToast('Meal plan saved successfully! 🎉', 'success');
+      
+      // Optional: redirect to saved meal plan after a delay
+      setTimeout(() => {
+        navigate('/my-meal-plan');
+      }, 2000);
       
     } catch (err: any) {
       console.error('Failed to save meal plan:', err);
@@ -148,7 +164,17 @@ const MealPlanDisplay: React.FC<MealPlanDisplayProps> = ({ onBack }) => {
       console.error('Error status:', err.response?.status);
       
       const errorMessage = err.response?.data?.detail || err.message || 'Unknown error';
-      setError(`Failed to save meal plan to database: ${errorMessage}`);
+      
+      // Check if it's a duplicate error
+      if (errorMessage.includes('already exists') || errorMessage.includes('duplicate')) {
+        setIsSaved(true);
+        showToast('This meal plan is already saved!', 'info');
+      } else {
+        showToast(`Failed to save meal plan: ${errorMessage}`, 'error');
+        setError(`Failed to save meal plan: ${errorMessage}`);
+      }
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -260,11 +286,21 @@ const MealPlanDisplay: React.FC<MealPlanDisplayProps> = ({ onBack }) => {
             🗑️ Clear Cache
           </button>
           <button 
-            className="btn btn-primary"
+            className={`btn ${isSaved ? 'btn-success' : 'btn-primary'} ${isSaving ? 'loading' : ''}`}
             onClick={handleSaveMealPlan}
-            aria-label="Save meal plan to database"
+            disabled={isSaved || isSaving}
+            aria-label={isSaved ? "Meal plan saved" : "Save meal plan to database"}
           >
-            💾 Save to Database
+            {isSaving ? (
+              <>
+                <span className="spinner"></span>
+                Saving...
+              </>
+            ) : isSaved ? (
+              '✅ Plan Saved'
+            ) : (
+              '📥 Save My Meal Plan'
+            )}
           </button>
         </div>
       </div>

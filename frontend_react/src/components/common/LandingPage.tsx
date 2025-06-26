@@ -1,113 +1,43 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import styled from 'styled-components';
-
-const Container = styled.div`
-  min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-`;
-
-const Content = styled.div`
-  text-align: center;
-  color: white;
-  max-width: 700px;
-`;
-
-const Title = styled.h1`
-  font-size: 4rem;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-  
-  @media (max-width: 768px) {
-    font-size: 3rem;
-  }
-`;
-
-const Tagline = styled.p`
-  font-size: 1.3rem;
-  margin-bottom: 1.5rem;
-  opacity: 0.9;
-  font-style: italic;
-  
-  @media (max-width: 768px) {
-    font-size: 1.1rem;
-  }
-`;
-
-const Subtitle = styled.p`
-  font-size: 1.4rem;
-  margin-bottom: 3rem;
-  opacity: 0.95;
-  line-height: 1.6;
-  
-  @media (max-width: 768px) {
-    font-size: 1.2rem;
-  }
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  flex-wrap: wrap;
-`;
-
-const Button = styled(Link)<{ variant?: 'primary' | 'secondary' }>`
-  display: inline-block;
-  padding: 1rem 2rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-  text-decoration: none;
-  border-radius: 12px;
-  transition: all 0.3s ease;
-  
-  ${props => props.variant === 'secondary' ? `
-    background: transparent;
-    color: white;
-    border: 2px solid white;
-    
-    &:hover {
-      background: white;
-      color: #667eea;
-    }
-  ` : `
-    background: white;
-    color: #667eea;
-    border: 2px solid white;
-    
-    &:hover {
-      background: transparent;
-      color: white;
-      transform: translateY(-2px);
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-    }
-  `}
-`;
+import DarkModeToggle from './DarkModeToggle';
 
 const LandingPage: React.FC = () => {
   return (
-    <Container>
-      <Content>
-        <Title>MealMind</Title>
-        <Tagline>AI that thinks for your gut</Tagline>
-        <Subtitle>
+    <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 dark:from-blue-900 dark:to-purple-900 flex items-center justify-center p-4 relative">
+      {/* Dark Mode Toggle */}
+      <div className="absolute top-4 right-4">
+        <DarkModeToggle />
+      </div>
+      
+      <div className="text-center text-white max-w-4xl">
+        <h1 className="text-6xl md:text-7xl font-bold mb-2 text-white">
+          MealMind
+        </h1>
+        <p className="text-xl md:text-2xl mb-6 opacity-90 italic text-white">
+          AI that thinks for your gut
+        </p>
+        <p className="text-lg md:text-xl mb-12 opacity-95 leading-relaxed text-white">
           Smart meal planning powered by AI. Let MealMind understand your preferences, 
           dietary needs, and lifestyle to create personalized meal plans that nourish your body and mind.
-        </Subtitle>
-        <ButtonGroup>
-          <Button to="/onboarding?step=1" variant="primary">
+        </p>
+        
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Link
+            to="/onboarding?step=1"
+            className="inline-block px-8 py-4 text-lg font-semibold text-blue-600 bg-white rounded-xl border-2 border-white transition-all duration-300 hover:bg-transparent hover:text-white hover:-translate-y-1 hover:shadow-2xl"
+          >
             Get Started - Create Account
-          </Button>
-          <Button to="/login" variant="secondary">
+          </Link>
+          <Link
+            to="/login"
+            className="inline-block px-8 py-4 text-lg font-semibold text-white bg-transparent rounded-xl border-2 border-white transition-all duration-300 hover:bg-white hover:text-blue-600"
+          >
             Already have an account? Sign In
-          </Button>
-        </ButtonGroup>
-      </Content>
-    </Container>
+          </Link>
+        </div>
+      </div>
+    </div>
   );
 };
 

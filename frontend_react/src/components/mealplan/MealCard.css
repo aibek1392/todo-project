@@ -1,158 +1,97 @@
-/* Meal Card Styles */
+/* Meal Card Styles with Tailwind and Dark Mode */
 .meal-card {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 1.25rem;
-  transition: all 0.2s ease;
-  height: fit-content;
+  @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 transition-all duration-200 h-fit;
 }
 
 .meal-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border-color: #d1d5db;
+  @apply -translate-y-1 shadow-xl border-gray-300 dark:border-gray-600;
 }
 
 /* Meal Type Specific Colors */
 .meal-breakfast {
-  border-left: 4px solid #f59e0b;
+  @apply border-l-4 border-l-amber-500;
 }
 
 .meal-lunch {
-  border-left: 4px solid #10b981;
+  @apply border-l-4 border-l-emerald-500;
 }
 
 .meal-dinner {
-  border-left: 4px solid #8b5cf6;
+  @apply border-l-4 border-l-violet-500;
 }
 
 .meal-snack {
-  border-left: 4px solid #f97316;
+  @apply border-l-4 border-l-orange-500;
 }
 
 /* Meal Header */
 .meal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1rem;
-  gap: 1rem;
+  @apply flex justify-between items-start mb-4 gap-4;
 }
 
 .meal-type {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  @apply flex items-center gap-2;
 }
 
 .meal-icon {
-  font-size: 1.2rem;
+  @apply text-xl;
 }
 
 .meal-label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  @apply text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide;
 }
 
 .meal-calories {
-  background: #f0f9ff;
-  color: #0ea5e9;
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  border: 1px solid #e0f2fe;
+  @apply bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs font-semibold px-3 py-1 rounded-xl border border-blue-200 dark:border-blue-800;
 }
 
 /* Meal Content */
 .meal-title {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #1f2937;
-  margin: 0 0 0.75rem 0;
-  line-height: 1.4;
+  @apply text-xl font-bold text-gray-900 dark:text-white mb-3 leading-snug;
 }
 
 .meal-description {
-  font-size: 0.9rem;
-  color: #4b5563;
-  line-height: 1.6;
-  margin: 0 0 1rem 0;
+  @apply text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-4;
 }
 
 .cooking-time {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
-  color: #6b7280;
-  margin-bottom: 1rem;
+  @apply flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-4;
 }
 
 .time-icon {
-  font-size: 1rem;
+  @apply text-base;
 }
 
 /* Dietary Tags */
 .dietary-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+  @apply flex flex-wrap gap-2 mb-4;
 }
 
 .dietary-tag {
-  background: #f3f4f6;
-  color: #374151;
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0.25rem 0.75rem;
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  border: 1px solid #e5e7eb;
-  transition: all 0.2s ease;
-}
-
-.dietary-tag:hover {
-  background: #e5e7eb;
-  transform: translateY(-1px);
+  @apply bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1 border border-gray-200 dark:border-gray-600 transition-all duration-200 hover:bg-gray-200 dark:hover:bg-gray-600 hover:-translate-y-0.5;
 }
 
 .tag-emoji {
-  font-size: 0.8rem;
+  @apply text-xs;
 }
 
 /* Special dietary tag colors */
 .dietary-tag:has(.tag-emoji:contains("🌱")),
 .dietary-tag:has(.tag-emoji:contains("🌿")) {
-  background: #f0fdf4;
-  color: #15803d;
-  border-color: #bbf7d0;
+  @apply bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800;
 }
 
 .dietary-tag:has(.tag-emoji:contains("🚫")) {
-  background: #fef2f2;
-  color: #dc2626;
-  border-color: #fecaca;
+  @apply bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800;
 }
 
 .dietary-tag:has(.tag-emoji:contains("💪")) {
-  background: #eff6ff;
-  color: #2563eb;
-  border-color: #dbeafe;
+  @apply bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800;
 }
 
 .dietary-tag:has(.tag-emoji:contains("⚡")),
 .dietary-tag:has(.tag-emoji:contains("😊")) {
-  background: #fffbeb;
-  color: #d97706;
-  border-color: #fed7aa;
+  @apply bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800;
 }
 
 /* Ingredients Section */

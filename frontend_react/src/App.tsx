@@ -7,18 +7,22 @@ import ProtectedRoute from './components/common/ProtectedRoute';
 import LandingPage from './components/common/LandingPage';
 import LoginForm from './components/auth/LoginForm';
 import TodoList from './components/todos/TodoList';
+import Dashboard from './components/dashboard/Dashboard';
+import MyMealPlan from './components/mealplan/MyMealPlan';
 import OnboardingForm from './components/onboarding/OnboardingForm';
 import TestProfileUpdate from './components/TestProfileUpdate';
 import DebugAuth from './components/DebugAuth';
 import { MealPlanDisplay } from './components/mealplan';
+import { ToastProvider } from './hooks/useToast';
 import './App.css';
 
 const App: React.FC = () => {
   return (
     <Provider store={store}>
-      <AuthInitializer>
-        <Router>
-          <div className="App">
+      <ToastProvider>
+        <AuthInitializer>
+          <Router>
+          <div className="App min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200">
             <Routes>
               {/* Public routes */}
               <Route path="/" element={<LandingPage />} />
@@ -34,6 +38,24 @@ const App: React.FC = () => {
               <Route path="/debug" element={<DebugAuth />} />
               
               {/* Protected routes */}
+              <Route 
+                path="/dashboard" 
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                } 
+              />
+
+              <Route 
+                path="/my-meal-plan" 
+                element={
+                  <ProtectedRoute>
+                    <MyMealPlan />
+                  </ProtectedRoute>
+                } 
+              />
+              
               <Route 
                 path="/meals" 
                 element={
@@ -53,8 +75,8 @@ const App: React.FC = () => {
                 } 
               />
               
-              {/* Legacy redirect */}
-              <Route path="/todos" element={<Navigate to="/meals" replace />} />
+              {/* Redirect /todos to dashboard */}
+              <Route path="/todos" element={<Navigate to="/dashboard" replace />} />
               
               {/* Legacy signup redirect */}
               <Route path="/signup" element={<Navigate to="/onboarding" replace />} />
@@ -65,6 +87,7 @@ const App: React.FC = () => {
           </div>
         </Router>
       </AuthInitializer>
+      </ToastProvider>
     </Provider>
   );
 };

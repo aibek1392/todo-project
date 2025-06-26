@@ -983,6 +983,219 @@ async def create_meal_plan(
         raise HTTPException(status_code=500, detail=f"Failed to generate meal plan: {str(e)}")
 
 
+@app.get("/api/user-meal-plans")
+async def get_user_meal_plans(current_user_id: int = Depends(get_current_user)):
+    """Get all meal plans for the current user"""
+    try:
+        if supabase is None:
+            raise HTTPException(status_code=500, detail="Database not configured")
+        
+        # Get user's meal plans
+        meal_plans_response = supabase.table('meal_plans').select("*").eq("user_id", current_user_id).eq("is_basket", False).order("created_at", desc=True).execute()
+        
+        return meal_plans_response.data
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get meal plans: {str(e)}")
+
+@app.get("/api/latest-meal-plan")
+async def get_latest_meal_plan(current_user_id: int = Depends(get_current_user)):
+    """Get the latest meal plan for the current user"""
+    try:
+        if supabase is None:
+            raise HTTPException(status_code=500, detail="Database not configured")
+        
+        # Get user's latest meal plan
+        meal_plan_response = supabase.table('meal_plans').select("*").eq("user_id", current_user_id).eq("is_basket", False).order("created_at", desc=True).limit(1).execute()
+        
+        if not meal_plan_response.data:
+            return None
+        
+        meal_plan = meal_plan_response.data[0]
+        
+        # Get meal plan items
+        meal_items_response = supabase.table('meal_plan_items').select("*, recipes(*)").eq("meal_plan_id", meal_plan['id']).execute()
+        
+        # Get shopping list items
+        shopping_items_response = supabase.table('shopping_list_items').select("*").eq("meal_plan_id", meal_plan['id']).execute()
+        
+        return {
+            "meal_plan": meal_plan,
+            "meal_items": meal_items_response.data,
+            "shopping_items": shopping_items_response.data
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get latest meal plan: {str(e)}")
+
+@app.get("/api/latest-meal-plan-formatted")
+async def get_latest_meal_plan_formatted(current_user_id: int = Depends(get_current_user)):
+    """Get the latest meal plan formatted exactly like the generated meal plan response"""
+    try:
+        if supabase is None:
+            raise HTTPException(status_code=500, detail="Database not configured")
+        
+        # Get user's latest meal plan
+        meal_plan_response = supabase.table('meal_plans').select("*").eq("user_id", current_user_id).eq("is_basket", False).order("created_at", desc=True).limit(1).execute()
+        
+        if not meal_plan_response.data:
+            raise HTTPException(status_code=404, detail="No meal plan found")
+        
+        meal_plan = meal_plan_response.data[0]
+        
+        # Get meal plan items with recipes
+        meal_items_response = supabase.table('meal_plan_items').select("*, recipes(*)").eq("meal_plan_id", meal_plan['id']).order("day").execute()
+        
+        # Get shopping list items
+        shopping_items_response = supabase.table('shopping_list_items').select("*").eq("meal_plan_id", meal_plan['id']).execute()
+        
+        # Convert database format back to MealPlanResponse format
+        from datetime import datetime, timedelta
+        from collections import defaultdict
+        
+        # Group meals by day
+        meals_by_day = defaultdict(lambda: {"breakfast": None, "lunch": None, "dinner": None, "snacks": []})
+        
+        for item in meal_items_response.data:
+            try:
+                # Parse the day date
+                day_date = datetime.strptime(item['day'], '%Y-%m-%d').date()
+                start_date = datetime.strptime(meal_plan['start_date'], '%Y-%m-%d').date()
+                day_offset = (day_date - start_date).days
+                
+                # Map day offset to day name
+                day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+                day_name = day_names[day_offset % 7]
+                
+                # Get recipe data - handle potential null recipes
+                recipe = item.get('recipes')
+                if not recipe:
+                    print(f"Warning: No recipe found for meal plan item {item['id']}")
+                    continue
+                
+                # Create meal data with safe access to recipe fields
+                meal_data = {
+                    "title": recipe.get('name', 'Unknown Meal'),
+                    "description": recipe.get('description', 'A delicious meal'),
+                    "ingredients": recipe.get('ingredients', []) if isinstance(recipe.get('ingredients'), list) else [],
+                    "cooking_time": f"{recipe.get('cook_time_minutes', 30)} minutes",
+                    "calories": recipe.get('total_calories'),
+                    "dietary_tags": recipe.get('tags', []) if isinstance(recipe.get('tags'), list) else []
+                }
+                
+                # Add meal to the appropriate slot
+                meal_type = item['meal_type']
+                if meal_type == 'snack':
+                    meals_by_day[day_name]['snacks'].append(meal_data)
+                else:
+                    meals_by_day[day_name][meal_type] = meal_data
+                    
+            except Exception as item_error:
+                print(f"Error processing meal item {item.get('id', 'unknown')}: {str(item_error)}")
+                continue
+        
+        # Create the day meals structure
+        day_names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        meal_plan_days = []
+        
+        for i, day_name in enumerate(day_names):
+            try:
+                day_data = meals_by_day[day_name]
+                start_date_obj = datetime.strptime(meal_plan['start_date'], '%Y-%m-%d').date()
+                day_date = start_date_obj + timedelta(days=i)
+                
+                day_meals = {
+                    "day": day_name,
+                    "date": day_date.strftime('%Y-%m-%d')
+                }
+                
+                # Add meals that exist
+                if day_data['breakfast']:
+                    day_meals['breakfast'] = day_data['breakfast']
+                if day_data['lunch']:
+                    day_meals['lunch'] = day_data['lunch']
+                if day_data['dinner']:
+                    day_meals['dinner'] = day_data['dinner']
+                if day_data['snacks']:
+                    day_meals['snacks'] = day_data['snacks']
+                
+                # Only add days that have at least one meal
+                if any([day_data['breakfast'], day_data['lunch'], day_data['dinner'], day_data['snacks']]):
+                    meal_plan_days.append(day_meals)
+                    
+            except Exception as day_error:
+                print(f"Error processing day {day_name}: {str(day_error)}")
+                continue
+        
+        # Convert shopping list to the expected format
+        shopping_list = []
+        for item in shopping_items_response.data:
+            try:
+                shopping_item = {
+                    "category": item.get('category', 'Other'),
+                    "item": item.get('item_name', 'Unknown Item'),
+                    "quantity": item.get('quantity', '1 unit'),
+                    "estimated_cost": ""
+                }
+                
+                # Format cost
+                if item.get('price_min') and item.get('price_max'):
+                    if item['price_min'] == item['price_max']:
+                        shopping_item["estimated_cost"] = f"${item['price_min']:.0f}"
+                    else:
+                        shopping_item["estimated_cost"] = f"${item['price_min']:.0f}-${item['price_max']:.0f}"
+                elif item.get('price_min'):
+                    shopping_item["estimated_cost"] = f"${item['price_min']:.0f}"
+                
+                shopping_list.append(shopping_item)
+                
+            except Exception as shopping_error:
+                print(f"Error processing shopping item {item.get('id', 'unknown')}: {str(shopping_error)}")
+                continue
+        
+        # Calculate estimated total cost
+        total_cost = "$50-80"  # Default fallback
+        try:
+            if shopping_items_response.data:
+                min_total = sum(float(item.get('price_min', 0) or 0) for item in shopping_items_response.data)
+                max_total = sum(float(item.get('price_max', 0) or 0) for item in shopping_items_response.data)
+                if min_total > 0:
+                    if max_total > min_total:
+                        total_cost = f"${min_total:.0f}-${max_total:.0f}"
+                    else:
+                        total_cost = f"${min_total:.0f}"
+        except Exception as cost_error:
+            print(f"Error calculating total cost: {str(cost_error)}")
+        
+        # Create the response in the format expected by the frontend
+        response = {
+            "meal_plan": meal_plan_days,
+            "shopping_list": shopping_list,
+            "total_estimated_cost": total_cost,
+            "nutritional_summary": {
+                "Weekly Focus": "Balanced nutrition with personalized dietary preferences",
+                "Meal Variety": f"{len(meal_plan_days)} days of diverse meals",
+                "Plan Created": meal_plan['created_at'][:10] if meal_plan.get('created_at') else "Recently"
+            },
+            "preparation_tips": [
+                "Prep ingredients in advance for easier weekday cooking",
+                "Store fresh herbs in water to extend their life",
+                "Batch cook grains and proteins for quick meal assembly",
+                "Check your pantry before shopping to avoid duplicates"
+            ]
+        }
+        
+        print(f"✅ Retrieved and formatted meal plan for user {current_user_id}: {len(meal_plan_days)} days, {len(shopping_list)} shopping items")
+        return response
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error formatting meal plan: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to format meal plan: {str(e)}")
+
 @app.get("/api/meal-plan-cache/stats")
 async def get_meal_plan_cache_stats(current_user_id: int = Depends(get_current_user)):
     """Get statistics about the Redis meal plan cache"""
@@ -1617,3 +1830,7 @@ async def generate_and_store_meal_plan(
 
 
 # Test endpoint for meal planning (development only)
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

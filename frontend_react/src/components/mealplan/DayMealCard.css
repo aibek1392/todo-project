@@ -1,111 +1,74 @@
-/* Day Meal Card Styles */
+/* Day Meal Card Styles with Tailwind and Dark Mode */
 .day-meal-card {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  overflow: hidden;
-  transition: all 0.3s ease;
+  @apply bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden transition-all duration-300;
 }
 
 .day-meal-card:hover {
-  border-color: #059669;
+  @apply border-green-600 dark:border-green-500;
   box-shadow: 0 4px 12px rgba(5, 150, 105, 0.1);
+}
+
+.dark .day-meal-card:hover {
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
 }
 
 /* Day Header */
 .day-header {
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  padding: 1rem 1.5rem;
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #e2e8f0;
-  transition: all 0.2s ease;
-  user-select: none;
+  @apply bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-700 p-4 lg:px-6 cursor-pointer flex justify-between items-center border-b border-gray-200 dark:border-gray-700 transition-all duration-200 select-none;
 }
 
 .day-header:hover {
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  @apply bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-gray-700 dark:to-gray-600;
 }
 
 .day-header:focus {
-  outline: 2px solid #059669;
+  @apply outline-2 outline-green-600 dark:outline-green-500;
   outline-offset: -2px;
 }
 
 .day-header.expanded {
-  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
-  border-bottom-color: #059669;
+  @apply bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-b-green-600 dark:border-b-green-500;
 }
 
 .day-info {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+  @apply flex items-center gap-4;
 }
 
 .day-number {
-  background: #059669;
-  color: white;
-  font-size: 0.8rem;
-  font-weight: 700;
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  min-width: 60px;
-  text-align: center;
+  @apply bg-green-600 dark:bg-green-700 text-white text-xs font-bold px-3 py-1 rounded-full min-w-[60px] text-center;
 }
 
 .day-details h3.day-name {
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: #1f2937;
-  margin: 0;
+  @apply text-xl font-bold text-gray-900 dark:text-white m-0;
 }
 
 .day-details p.day-date {
-  font-size: 0.9rem;
-  color: #6b7280;
-  margin: 0;
-  margin-top: 0.25rem;
+  @apply text-sm text-gray-600 dark:text-gray-400 m-0 mt-1;
 }
 
 .day-summary {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.25rem;
-  text-align: right;
+  @apply flex flex-col items-end gap-1 text-right;
 }
 
 .meals-count {
-  font-size: 0.9rem;
-  color: #374151;
-  font-weight: 600;
+  @apply text-sm text-gray-700 dark:text-gray-300 font-semibold;
 }
 
 .total-calories {
-  font-size: 0.8rem;
-  color: #059669;
-  font-weight: 600;
+  @apply text-xs text-green-600 dark:text-green-400 font-semibold;
 }
 
 .expand-icon {
-  color: #6b7280;
-  font-size: 1rem;
-  transition: transform 0.2s ease;
-  margin-left: 1rem;
+  @apply text-gray-500 dark:text-gray-400 text-base transition-transform duration-200 ml-4;
 }
 
 .expand-icon.rotated {
-  transform: rotate(180deg);
-  color: #059669;
+  @apply rotate-180 text-green-600 dark:text-green-500;
 }
 
 /* Day Content */
 .day-content {
-  padding: 1.5rem;
-  background: white;
+  @apply p-6 bg-white dark:bg-gray-800;
   animation: slideDown 0.3s ease-out;
 }
 
@@ -121,70 +84,43 @@
 }
 
 .meals-grid {
-  display: grid;
-  gap: 1rem;
-}
-
-/* Responsive Grid */
-@media (min-width: 640px) {
-  .meals-grid {
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  }
-}
-
-@media (min-width: 1024px) {
-  .meals-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 1200px) {
-  .meals-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
+  @apply grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
 }
 
 /* Mobile Optimizations */
 @media (max-width: 640px) {
   .day-header {
-    padding: 0.75rem 1rem;
+    @apply p-3;
   }
   
   .day-info {
-    gap: 0.75rem;
+    @apply gap-3;
   }
   
   .day-number {
-    font-size: 0.7rem;
-    padding: 0.2rem 0.6rem;
-    min-width: 50px;
+    @apply text-[0.7rem] px-2 py-1 min-w-[50px];
   }
   
   .day-details h3.day-name {
-    font-size: 1.1rem;
+    @apply text-lg;
   }
   
   .day-details p.day-date {
-    font-size: 0.8rem;
+    @apply text-xs;
   }
   
   .day-summary {
-    font-size: 0.8rem;
+    @apply text-xs;
   }
   
   .day-content {
-    padding: 1rem;
-  }
-  
-  .meals-grid {
-    grid-template-columns: 1fr;
+    @apply p-4;
   }
 }
 
 /* Accessibility Improvements */
 .day-header:focus-visible {
-  outline: 2px solid #059669;
-  outline-offset: 2px;
+  @apply outline-2 outline-green-600 dark:outline-green-500 outline-offset-2;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -192,7 +128,7 @@
   .day-header,
   .expand-icon,
   .day-content {
-    transition: none;
+    @apply transition-none;
   }
   
   .day-content {

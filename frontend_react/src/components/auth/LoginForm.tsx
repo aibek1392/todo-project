@@ -1,109 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import { login, clearError } from '../../store/authSlice';
 import { LoginCredentials } from '../../types/auth';
-
-const Container = styled.div`
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 1rem;
-`;
-
-const FormWrapper = styled.div`
-  background: white;
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  width: 100%;
-  max-width: 400px;
-`;
-
-const Title = styled.h1`
-  font-size: 2rem;
-  font-weight: bold;
-  text-align: center;
-  color: #1f2937;
-  margin-bottom: 2rem;
-`;
-
-const Form = styled.form`
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-`;
-
-const FormGroup = styled.div`
-  display: flex;
-  flex-direction: column;
-`;
-
-const Label = styled.label`
-  font-weight: 500;
-  color: #374151;
-  margin-bottom: 0.5rem;
-`;
-
-const Input = styled.input`
-  padding: 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: border-color 0.2s;
-
-  &:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  }
-`;
-
-const Button = styled.button<{ disabled?: boolean }>`
-  background: ${props => props.disabled ? '#9ca3af' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'};
-  color: white;
-  padding: 0.75rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
-  transition: opacity 0.2s;
-  margin-top: 1rem;
-
-  &:hover {
-    opacity: ${props => props.disabled ? 1 : 0.9};
-  }
-`;
-
-const ErrorMessage = styled.div`
-  background: #fef2f2;
-  color: #dc2626;
-  padding: 0.75rem;
-  border-radius: 8px;
-  border: 1px solid #fecaca;
-  margin-bottom: 1rem;
-  text-align: center;
-`;
-
-const LinkText = styled.p`
-  text-align: center;
-  margin-top: 1.5rem;
-  color: #6b7280;
-
-  a {
-    color: #667eea;
-    text-decoration: none;
-    font-weight: 500;
-
-    &:hover {
-      text-decoration: underline;
-    }
-  }
-`;
+import DarkModeToggle from '../common/DarkModeToggle';
 
 const LoginForm: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -131,23 +31,39 @@ const LoginForm: React.FC = () => {
 
     try {
       await dispatch(login(formData)).unwrap();
-      navigate('/todos');
+      navigate('/dashboard');
     } catch (error) {
       // Error is handled by the slice
     }
   };
 
   return (
-    <Container>
-      <FormWrapper>
-        <Title>Sign In</Title>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 dark:from-blue-900 dark:to-purple-900 p-4 relative">
+      {/* Dark Mode Toggle */}
+      <div className="absolute top-4 right-4">
+        <DarkModeToggle />
+      </div>
+      
+      <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-md">
+        <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-8">
+          Sign In
+        </h1>
         
-        {error && <ErrorMessage>{error}</ErrorMessage>}
+        {error && (
+          <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-lg border border-red-200 dark:border-red-800 mb-6 text-center">
+            {error}
+          </div>
+        )}
         
-        <Form onSubmit={handleSubmit}>
-          <FormGroup>
-            <Label htmlFor="username">Username</Label>
-            <Input
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label 
+              htmlFor="username" 
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
+              Username
+            </label>
+            <input
               type="text"
               id="username"
               name="username"
@@ -155,12 +71,18 @@ const LoginForm: React.FC = () => {
               onChange={handleChange}
               required
               placeholder="Enter your username"
+              className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
             />
-          </FormGroup>
+          </div>
 
-          <FormGroup>
-            <Label htmlFor="password">Password</Label>
-            <Input
+          <div>
+            <label 
+              htmlFor="password" 
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            >
+              Password
+            </label>
+            <input
               type="password"
               id="password"
               name="password"
@@ -168,19 +90,30 @@ const LoginForm: React.FC = () => {
               onChange={handleChange}
               required
               placeholder="Enter your password"
+              className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
             />
-          </FormGroup>
+          </div>
 
-          <Button type="submit" disabled={isLoading}>
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-medium rounded-lg transition-all duration-200 disabled:cursor-not-allowed"
+          >
             {isLoading ? 'Signing in...' : 'Sign In'}
-          </Button>
-        </Form>
+          </button>
+        </form>
 
-        <LinkText>
-          Don't have an account? <Link to="/onboarding?step=1">Create Account</Link>
-        </LinkText>
-      </FormWrapper>
-    </Container>
+        <p className="text-center mt-6 text-gray-600 dark:text-gray-400">
+          Don't have an account?{' '}
+          <Link 
+            to="/onboarding?step=1" 
+            className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium hover:underline transition-colors"
+          >
+            Create Account
+          </Link>
+        </p>
+      </div>
+    </div>
   );
 };
 

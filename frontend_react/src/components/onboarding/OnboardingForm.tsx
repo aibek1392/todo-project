@@ -24,21 +24,8 @@ import Step6Location from './steps/Step6Location';
 import StepDropdown from '../common/StepDropdown';
 import { MealPlanDisplay } from '../mealplan';
 
-// Styled components
-import {
-  FormContainer,
-  FormCard,
-  FormHeader,
-  FormTitle,
-  FormContent,
-  FormActions,
-  Button,
-  StepIndicator,
-  LoadingSpinner,
-  SuccessMessage,
-  ErrorMessage,
-  CloseButton
-} from './OnboardingForm.styles';
+// Components
+import DarkModeToggle from '../common/DarkModeToggle';
 
 const OnboardingForm: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -208,48 +195,72 @@ const OnboardingForm: React.FC = () => {
     }
 
     return (
-      <FormContainer>
-        <FormCard>
-          <FormHeader>
-            <CloseButton onClick={handleClose} title="Close and return to main page" />
-            <FormTitle>🎉 Welcome to MealMind!</FormTitle>
-          </FormHeader>
+      <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 dark:from-blue-900 dark:to-purple-900 flex items-center justify-center p-4 relative">
+        {/* Dark Mode Toggle */}
+        <div className="absolute top-4 right-4">
+          <DarkModeToggle />
+        </div>
+        
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg relative overflow-hidden">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700 text-center relative">
+            <button 
+              onClick={handleClose} 
+              title="Close and return to main page"
+              className="absolute top-1/2 right-4 -translate-y-1/2 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            />
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">🎉 Welcome to MealMind!</h1>
+          </div>
           
-          <SuccessMessage>
-            <h2>Welcome to MealMind!</h2>
-            <p>
+          <div className="p-6 text-center">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Welcome to MealMind!</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
               🎉 Your account has been created successfully! We've set up a personalized profile 
               that will help us recommend the perfect meals, create shopping lists, and 
               suggest restaurants that match your preferences and health goals.
             </p>
-            <p>
+            <p className="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
               You're now logged in and ready to start your personalized meal planning journey.
             </p>
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <Button variant="primary" onClick={handleStartPlanning}>
+            <div className="flex gap-4 justify-center flex-wrap">
+              <button 
+                onClick={handleStartPlanning}
+                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:-translate-y-0.5 shadow-lg"
+              >
                 🍽️ Start Meal Planning
-              </Button>
-              <Button variant="secondary" onClick={() => navigate('/meals')}>
+              </button>
+              <button 
+                onClick={() => navigate('/meals')}
+                className="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-6 py-3 rounded-lg font-medium transition-colors border border-gray-300 dark:border-gray-600"
+              >
                 📱 Go to Meals App
-              </Button>
+              </button>
             </div>
-          </SuccessMessage>
-        </FormCard>
-      </FormContainer>
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <FormContainer>
-      <FormCard>
-        <FormHeader>
-          <CloseButton onClick={handleClose} title="Close and return to main page">
-            <svg viewBox="0 0 20 20" fill="currentColor">
+    <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 dark:from-blue-900 dark:to-purple-900 flex items-center justify-center p-4 relative">
+      {/* Dark Mode Toggle */}
+      <div className="absolute top-4 right-4">
+        <DarkModeToggle />
+      </div>
+      
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg relative overflow-hidden">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700 text-center relative">
+          <button 
+            onClick={handleClose} 
+            title="Close and return to main page"
+            className="absolute top-1/2 right-4 -translate-y-1/2 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-gray-600 dark:text-gray-400">
               <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
             </svg>
-          </CloseButton>
-          <FormTitle>MealMind Setup</FormTitle>
-        </FormHeader>
+          </button>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white">MealMind Setup</h1>
+        </div>
 
         <StepDropdown
           currentStep={currentStep}
@@ -257,46 +268,52 @@ const OnboardingForm: React.FC = () => {
           onStepChange={handleStepClick}
         />
 
-        <FormContent>
+        <div className="p-5 min-h-[400px]">
           {renderCurrentStep()}
-        </FormContent>
+        </div>
 
         {error && (
-          <ErrorMessage>
+          <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 border border-red-200 dark:border-red-800 mx-4 mb-4 rounded-lg">
             {error}
-          </ErrorMessage>
+          </div>
         )}
 
-        <FormActions>
+        <div className="flex justify-between items-center p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
           {currentStep > 1 && (
-            <Button variant="secondary" onClick={handlePrevious}>
+            <button 
+              onClick={handlePrevious}
+              className="bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-5 py-2.5 rounded-lg font-medium transition-colors border border-gray-300 dark:border-gray-600"
+            >
               Previous
-            </Button>
+            </button>
           )}
           
           {currentStep < totalSteps ? (
-            <Button variant="primary" onClick={handleNext}>
+            <button 
+              onClick={handleNext}
+              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-5 py-2.5 rounded-lg font-medium transition-all duration-200 hover:-translate-y-0.5 shadow-lg ml-auto"
+            >
               Next Step
-            </Button>
+            </button>
           ) : (
-            <Button 
-              variant="primary" 
+            <button 
               onClick={handleSubmit}
               disabled={isSubmitting}
+              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500 text-white px-5 py-2.5 rounded-lg font-medium transition-all duration-200 hover:-translate-y-0.5 shadow-lg disabled:cursor-not-allowed disabled:hover:translate-y-0 ml-auto flex items-center gap-2"
             >
               {isSubmitting ? (
                 <>
-                  <LoadingSpinner />
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   Completing Setup...
                 </>
               ) : (
                 'Complete Setup'
               )}
-            </Button>
+            </button>
           )}
-        </FormActions>
-      </FormCard>
-    </FormContainer>
+        </div>
+      </div>
+    </div>
   );
 };
 

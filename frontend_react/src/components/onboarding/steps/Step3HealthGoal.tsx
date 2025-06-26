@@ -4,17 +4,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../../store';
 import { updateHealthGoal } from '../../../store/onboardingSlice';
 import { HealthGoal, HEALTH_GOALS_NORMAL, HEALTH_GOALS_CRITICAL } from '../../../types/onboarding';
-import {
-  StepTitle,
-  StepDescription,
-  FormGroup,
-  Label,
-  Input,
-  RadioGroup,
-  RadioItem,
-  Radio,
-  ErrorMessage
-} from '../OnboardingForm.styles';
 
 interface Step3Props {
   onNext: () => void;
@@ -89,61 +78,78 @@ const Step3HealthGoal: React.FC<Step3Props> = ({ onNext }) => {
 
   return (
     <>
-      <StepTitle>What's your main health goal?</StepTitle>
-      <StepDescription>
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">What's your main health goal?</h2>
+      <p className="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
         {hasCriticalConditions ? (
           <>
             Based on your medical conditions, we've filtered the options to those that are most appropriate for your health needs.
             <br />
-            <em>Note: Options like "Lose weight", "Gain weight", and "Intermittent fasting" are hidden to avoid potential flare triggers.</em>
+            <em className="text-gray-500 dark:text-gray-500">Note: Options like "Lose weight", "Gain weight", and "Intermittent fasting" are hidden to avoid potential flare triggers.</em>
           </>
         ) : (
           'Choose the primary goal that best describes what you want to achieve with your meal planning.'
         )}
-      </StepDescription>
+      </p>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <FormGroup>
-          <Label>Select your health goal</Label>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Select your health goal
+          </label>
           <Controller
             name="goal"
             control={control}
             rules={{ required: 'Please select a health goal' }}
             render={({ field }) => (
-              <RadioGroup>
+              <div className="flex flex-col gap-2">
                 {healthGoalOptions.map((option) => (
-                  <RadioItem
+                  <label
                     key={option.value}
-                    className={field.value === option.value ? 'checked' : ''}
+                    className={`flex items-center gap-3 cursor-pointer p-3 rounded-lg border transition-colors ${
+                      field.value === option.value
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400'
+                        : 'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800'
+                    }`}
                   >
-                    <Radio
+                    <input
                       type="radio"
                       value={option.value}
                       checked={field.value === option.value}
                       onChange={(e) => field.onChange(e.target.value)}
+                      className="w-4 h-4 cursor-pointer text-blue-600 focus:ring-blue-500"
                     />
-                    <span style={{ fontSize: '20px', marginRight: '8px' }}>{option.emoji}</span>
-                    <span>{option.label}</span>
-                  </RadioItem>
+                    <span className="text-xl mr-2">{option.emoji}</span>
+                    <span className="text-gray-900 dark:text-gray-100 font-medium">{option.label}</span>
+                  </label>
                 ))}
-              </RadioGroup>
+              </div>
             )}
           />
-          {errors.goal && <ErrorMessage>{errors.goal.message}</ErrorMessage>}
-        </FormGroup>
+          {errors.goal && (
+            <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errors.goal.message}</p>
+          )}
+        </div>
 
         {selectedGoal === 'Other' && (
-          <FormGroup>
-            <Label htmlFor="customGoal">Describe your custom goal</Label>
-            <Input
+          <div className="space-y-2">
+            <label htmlFor="customGoal" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Describe your custom goal
+            </label>
+            <input
               id="customGoal"
               type="text"
               placeholder="Tell us about your specific health goal..."
-              className={errors.customGoal ? 'error' : ''}
+              className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                errors.customGoal 
+                  ? 'border-red-500 dark:border-red-400' 
+                  : 'border-gray-300 dark:border-gray-600'
+              }`}
               {...register('customGoal')}
             />
-            {errors.customGoal && <ErrorMessage>{errors.customGoal.message}</ErrorMessage>}
-          </FormGroup>
+            {errors.customGoal && (
+              <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errors.customGoal.message}</p>
+            )}
+          </div>
         )}
       </form>
     </>

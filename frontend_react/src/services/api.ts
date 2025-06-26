@@ -252,6 +252,24 @@ export const mealPlanAPI = {
     const response = await api.post('/test-meal-plan');
     return response.data;
   },
+
+  // Get user's meal plans
+  getUserMealPlans: async (): Promise<any> => {
+    const response = await api.get('/user-meal-plans');
+    return response.data;
+  },
+
+  // Get latest meal plan
+  getLatestMealPlan: async (): Promise<any> => {
+    const response = await api.get('/latest-meal-plan');
+    return response.data;
+  },
+
+  // Get latest meal plan formatted exactly like generated meal plan
+  getLatestMealPlanFormatted: async (): Promise<any> => {
+    const response = await api.get('/latest-meal-plan-formatted');
+    return response.data;
+  },
 };
 
 export default api; 

@@ -4,165 +4,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../../store';
 import { updateMedicalConditions, updateAllergiesIntolerances } from '../../../store/onboardingSlice';
 import { MedicalConditions, AllergiesIntolerances, MEDICAL_CONDITIONS, ALLERGIES_INTOLERANCES } from '../../../types/onboarding';
-import styled from 'styled-components';
-import {
-  StepTitle,
-  StepDescription,
-  FormGroup,
-  Label,
-  Input,
-  Select,
-  CheckboxGroup,
-  CheckboxItem,
-  Checkbox,
-  RadioGroup,
-  RadioItem,
-  Radio,
-  ErrorMessage
-} from '../OnboardingForm.styles';
 
 // Combined form data type for this step
 interface CombinedFormData extends MedicalConditions, AllergiesIntolerances {}
-
-// Styled components for responsive layout
-const CompactContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-`;
-
-const SectionGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
-  
-  @media (min-width: 768px) {
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-  }
-`;
-
-const CompactSection = styled.div`
-  background: #f8f9fa;
-  border-radius: 8px;
-  padding: 12px;
-  border-left: 3px solid #667eea;
-`;
-
-const CollapsibleSection = styled.div`
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  overflow: hidden;
-  margin-top: 8px;
-`;
-
-const CollapsibleHeader = styled.button`
-  width: 100%;
-  background: #f8f9fa;
-  border: none;
-  padding: 12px 16px;
-  text-align: left;
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: 600;
-  color: #333;
-  transition: background-color 0.2s ease;
-  
-  &:hover {
-    background: #e9ecef;
-  }
-`;
-
-const CollapsibleContent = styled.div<{ isOpen: boolean }>`
-  max-height: ${props => props.isOpen ? '500px' : '0'};
-  overflow: hidden;
-  transition: max-height 0.3s ease;
-  background: white;
-`;
-
-const CollapsibleInner = styled.div`
-  padding: 16px;
-`;
-
-const ChevronIcon = styled.svg<{ isOpen: boolean }>`
-  width: 16px;
-  height: 16px;
-  transform: ${props => props.isOpen ? 'rotate(180deg)' : 'rotate(0deg)'};
-  transition: transform 0.2s ease;
-`;
-
-const CompactCheckboxGroup = styled.div`
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 6px;
-  
-  @media (min-width: 480px) {
-    grid-template-columns: 1fr 1fr;
-  }
-  
-  @media (min-width: 768px) {
-    grid-template-columns: 1fr 1fr 1fr;
-  }
-`;
-
-const CompactCheckboxItem = styled.label`
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  padding: 6px 8px;
-  border-radius: 4px;
-  transition: background-color 0.2s ease;
-  font-size: 13px;
-
-  &:hover {
-    background: #f8f9fa;
-  }
-`;
-
-const CompactCheckbox = styled.input.attrs({ type: 'checkbox' })`
-  width: 14px;
-  height: 14px;
-  border: 2px solid #e1e5e9;
-  border-radius: 3px;
-  cursor: pointer;
-`;
-
-const CompactFormGroup = styled.div`
-  margin-bottom: 12px;
-`;
-
-const CompactLabel = styled.label`
-  display: block;
-  margin-bottom: 4px;
-  font-weight: 600;
-  color: #333;
-  font-size: 13px;
-`;
-
-const QuickSelect = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
-`;
-
-const QuickSelectTag = styled.button<{ selected: boolean }>`
-  background: ${props => props.selected ? '#667eea' : '#f1f3f4'};
-  color: ${props => props.selected ? 'white' : '#333'};
-  border: 1px solid ${props => props.selected ? '#667eea' : '#ddd'};
-  border-radius: 16px;
-  padding: 4px 12px;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: ${props => props.selected ? '#5a6fd8' : '#e9ecef'};
-  }
-`;
 
 interface Step2Props {
   onNext: () => void;
@@ -251,278 +95,330 @@ const Step2MedicalConditions: React.FC<Step2Props> = ({ onNext }) => {
   const commonAllergies = ['Gluten', 'Dairy', 'Nuts', 'Shellfish', 'Eggs', 'Soy'];
 
   return (
-    <CompactContainer>
+    <div className="flex flex-col gap-4">
       <div>
-        <StepTitle>Medical Conditions & Allergies</StepTitle>
-        <StepDescription>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Medical Conditions & Allergies</h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
           This information helps us provide safe and appropriate meal recommendations.
-        </StepDescription>
+        </p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)}>
         {/* Medical Conditions Section */}
-        <CompactFormGroup>
-          <CompactLabel>Medical conditions (select all that apply)</CompactLabel>
+        <div className="mb-3">
+          <label className="block mb-1 font-semibold text-gray-700 dark:text-gray-300 text-sm">
+            Medical conditions (select all that apply)
+          </label>
           <Controller
             name="conditions"
             control={control}
             render={({ field }) => (
-              <CompactCheckboxGroup>
+              <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 md:grid-cols-3">
                 {MEDICAL_CONDITIONS.map((condition) => (
-                  <CompactCheckboxItem
+                  <label
                     key={condition}
+                    className="flex items-center gap-1.5 cursor-pointer p-1.5 px-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm"
                   >
-                    <CompactCheckbox
+                    <input
+                      type="checkbox"
+                      className="w-3.5 h-3.5 border-2 border-gray-300 dark:border-gray-600 rounded cursor-pointer text-blue-600 focus:ring-blue-500"
                       checked={selectedConditions.includes(condition)}
                       onChange={(e) => handleConditionChange(condition, e.target.checked, field)}
                     />
-                    <span>{condition}</span>
-                  </CompactCheckboxItem>
+                    <span className="text-gray-900 dark:text-gray-100">{condition}</span>
+                  </label>
                 ))}
-              </CompactCheckboxGroup>
+              </div>
             )}
           />
-          {errors.conditions && <ErrorMessage>{errors.conditions.message}</ErrorMessage>}
-        </CompactFormGroup>
+          {errors.conditions && (
+            <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errors.conditions.message}</p>
+          )}
+        </div>
 
         {/* Conditional Medical Questions in Grid */}
-        <SectionGrid>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
           {/* Diabetes follow-up */}
           {selectedConditions.includes('Diabetes (Type 1 / Type 2)') && (
-            <CompactSection>
-              <CompactLabel>Do you take insulin?</CompactLabel>
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border-l-4 border-blue-500">
+              <label className="block mb-1 font-semibold text-gray-700 dark:text-gray-300 text-sm">
+                Do you take insulin?
+              </label>
               <Controller
                 name="diabetesInsulin"
                 control={control}
                 render={({ field }) => (
-                  <RadioGroup>
-                    <RadioItem>
-                      <Radio
+                  <div className="flex flex-col gap-2">
+                    <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                      <input
                         type="radio"
+                        className="w-4 h-4 cursor-pointer text-blue-600 focus:ring-blue-500"
                         checked={field.value === true}
                         onChange={() => field.onChange(true)}
                       />
-                      <span>Yes</span>
-                    </RadioItem>
-                    <RadioItem>
-                      <Radio
+                      <span className="text-gray-900 dark:text-gray-100">Yes</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                      <input
                         type="radio"
+                        className="w-4 h-4 cursor-pointer text-blue-600 focus:ring-blue-500"
                         checked={field.value === false}
                         onChange={() => field.onChange(false)}
                       />
-                      <span>No</span>
-                    </RadioItem>
-                  </RadioGroup>
+                      <span className="text-gray-900 dark:text-gray-100">No</span>
+                    </label>
+                  </div>
                 )}
               />
-            </CompactSection>
+            </div>
           )}
 
           {/* PCOS follow-up */}
           {selectedConditions.includes('PCOS') && (
-            <CompactSection>
-              <CompactLabel>Are you on hormonal treatment?</CompactLabel>
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border-l-4 border-blue-500">
+              <label className="block mb-1 font-semibold text-gray-700 dark:text-gray-300 text-sm">
+                Are you on hormonal treatment?
+              </label>
               <Controller
                 name="pcosHormonal"
                 control={control}
                 render={({ field }) => (
-                  <RadioGroup>
-                    <RadioItem>
-                      <Radio
+                  <div className="flex flex-col gap-2">
+                    <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                      <input
                         type="radio"
+                        className="w-4 h-4 cursor-pointer text-blue-600 focus:ring-blue-500"
                         checked={field.value === true}
                         onChange={() => field.onChange(true)}
                       />
-                      <span>Yes</span>
-                    </RadioItem>
-                    <RadioItem>
-                      <Radio
+                      <span className="text-gray-900 dark:text-gray-100">Yes</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                      <input
                         type="radio"
+                        className="w-4 h-4 cursor-pointer text-blue-600 focus:ring-blue-500"
                         checked={field.value === false}
                         onChange={() => field.onChange(false)}
                       />
-                      <span>No</span>
-                    </RadioItem>
-                  </RadioGroup>
+                      <span className="text-gray-900 dark:text-gray-100">No</span>
+                    </label>
+                  </div>
                 )}
               />
-            </CompactSection>
+            </div>
           )}
 
           {/* High blood pressure follow-up */}
           {selectedConditions.includes('High blood pressure') && (
-            <CompactSection>
-              <CompactLabel>Do you monitor your salt intake?</CompactLabel>
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border-l-4 border-blue-500">
+              <label className="block mb-1 font-semibold text-gray-700 dark:text-gray-300 text-sm">
+                Do you monitor your salt intake?
+              </label>
               <Controller
                 name="hbpSaltIntake"
                 control={control}
                 render={({ field }) => (
-                  <RadioGroup>
-                    <RadioItem>
-                      <Radio
+                  <div className="flex flex-col gap-2">
+                    <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                      <input
                         type="radio"
+                        className="w-4 h-4 cursor-pointer text-blue-600 focus:ring-blue-500"
                         checked={field.value === true}
                         onChange={() => field.onChange(true)}
                       />
-                      <span>Yes</span>
-                    </RadioItem>
-                    <RadioItem>
-                      <Radio
+                      <span className="text-gray-900 dark:text-gray-100">Yes</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                      <input
                         type="radio"
+                        className="w-4 h-4 cursor-pointer text-blue-600 focus:ring-blue-500"
                         checked={field.value === false}
                         onChange={() => field.onChange(false)}
                       />
-                      <span>No</span>
-                    </RadioItem>
-                  </RadioGroup>
+                      <span className="text-gray-900 dark:text-gray-100">No</span>
+                    </label>
+                  </div>
                 )}
               />
-            </CompactSection>
+            </div>
           )}
-        </SectionGrid>
+        </div>
 
         {/* IBD follow-up questions */}
         {selectedConditions.includes('IBD (Ulcerative Colitis, Crohn\'s)') && (
-          <SectionGrid>
-            <CompactSection>
-              <CompactLabel>Which type?</CompactLabel>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border-l-4 border-blue-500">
+              <label className="block mb-1 font-semibold text-gray-700 dark:text-gray-300 text-sm">
+                Which type?
+              </label>
               <Controller
                 name="ibdType"
                 control={control}
                 render={({ field }) => (
-                  <RadioGroup>
-                    <RadioItem>
-                      <Radio
+                  <div className="flex flex-col gap-2">
+                    <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                      <input
                         type="radio"
+                        className="w-4 h-4 cursor-pointer text-blue-600 focus:ring-blue-500"
                         checked={field.value === 'Ulcerative colitis'}
                         onChange={() => field.onChange('Ulcerative colitis')}
                       />
-                      <span>Ulcerative colitis</span>
-                    </RadioItem>
-                    <RadioItem>
-                      <Radio
+                      <span className="text-gray-900 dark:text-gray-100">Ulcerative colitis</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                      <input
                         type="radio"
+                        className="w-4 h-4 cursor-pointer text-blue-600 focus:ring-blue-500"
                         checked={field.value === 'Crohns'}
                         onChange={() => field.onChange('Crohns')}
                       />
-                      <span>Crohn's</span>
-                    </RadioItem>
-                  </RadioGroup>
+                      <span className="text-gray-900 dark:text-gray-100">Crohn's</span>
+                    </label>
+                  </div>
                 )}
               />
-            </CompactSection>
+            </div>
 
             {ibdType === 'Ulcerative colitis' && (
-              <CompactSection>
-                <CompactLabel>Current condition?</CompactLabel>
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border-l-4 border-blue-500">
+                <label className="block mb-1 font-semibold text-gray-700 dark:text-gray-300 text-sm">
+                  Current condition?
+                </label>
                 <Controller
                   name="ucCondition"
                   control={control}
                   render={({ field }) => (
-                    <RadioGroup>
-                      <RadioItem>
-                        <Radio
+                    <div className="flex flex-col gap-2">
+                      <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        <input
                           type="radio"
+                          className="w-4 h-4 cursor-pointer text-blue-600 focus:ring-blue-500"
                           checked={field.value === 'In flare'}
                           onChange={() => field.onChange('In flare')}
                         />
-                        <span>In flare</span>
-                      </RadioItem>
-                      <RadioItem>
-                        <Radio
+                        <span className="text-gray-900 dark:text-gray-100">In flare</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        <input
                           type="radio"
+                          className="w-4 h-4 cursor-pointer text-blue-600 focus:ring-blue-500"
                           checked={field.value === 'In remission'}
                           onChange={() => field.onChange('In remission')}
                         />
-                        <span>In remission</span>
-                      </RadioItem>
-                    </RadioGroup>
+                        <span className="text-gray-900 dark:text-gray-100">In remission</span>
+                      </label>
+                    </div>
                   )}
                 />
-              </CompactSection>
+              </div>
             )}
-          </SectionGrid>
+          </div>
         )}
 
         {selectedConditions.includes('Other') && (
-          <CompactFormGroup>
-            <CompactLabel htmlFor="otherCondition">Describe your other medical condition</CompactLabel>
-            <Input
+          <div className="mb-3">
+            <label htmlFor="otherCondition" className="block mb-1 font-semibold text-gray-700 dark:text-gray-300 text-sm">
+              Describe your other medical condition
+            </label>
+            <input
               id="otherCondition"
               type="text"
               placeholder="Please specify your other medical condition..."
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
               {...register('otherCondition')}
             />
-            {errors.otherCondition && <ErrorMessage>{errors.otherCondition.message}</ErrorMessage>}
-          </CompactFormGroup>
+            {errors.otherCondition && (
+              <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errors.otherCondition.message}</p>
+            )}
+          </div>
         )}
 
         {/* Collapsible Allergies Section */}
-        <CollapsibleSection>
-          <CollapsibleHeader
+        <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden mt-2">
+          <button
             type="button"
+            className="w-full bg-gray-50 dark:bg-gray-800 border-none p-3 px-4 text-left cursor-pointer flex justify-between items-center font-semibold text-gray-700 dark:text-gray-300 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
             onClick={() => setIsAllergiesOpen(!isAllergiesOpen)}
           >
             <span>🚫 Allergies & Intolerances {selectedAllergies.length > 0 && `(${selectedAllergies.length} selected)`}</span>
-            <ChevronIcon isOpen={isAllergiesOpen} viewBox="0 0 20 20" fill="currentColor">
+            <svg 
+              className={`w-4 h-4 transition-transform ${isAllergiesOpen ? 'rotate-180' : 'rotate-0'}`}
+              viewBox="0 0 20 20" 
+              fill="currentColor"
+            >
               <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-            </ChevronIcon>
-          </CollapsibleHeader>
+            </svg>
+          </button>
           
-          <CollapsibleContent isOpen={isAllergiesOpen}>
-            <CollapsibleInner>
+          <div className={`overflow-hidden transition-all duration-300 bg-white dark:bg-gray-900 ${isAllergiesOpen ? 'max-h-96' : 'max-h-0'}`}>
+            <div className="p-4">
               <Controller
                 name="allergies"
                 control={control}
                 render={({ field }) => (
                   <>
-                    <CompactLabel>Quick select common allergies:</CompactLabel>
-                    <QuickSelect>
+                    <label className="block mb-1 font-semibold text-gray-700 dark:text-gray-300 text-sm">
+                      Quick select common allergies:
+                    </label>
+                    <div className="flex flex-wrap gap-1.5 mt-2">
                       {commonAllergies.map((allergy) => (
-                        <QuickSelectTag
+                        <button
                           key={allergy}
                           type="button"
-                          selected={selectedAllergies.includes(allergy)}
+                          className={`px-3 py-1 text-xs cursor-pointer transition-all rounded-full border ${
+                            selectedAllergies.includes(allergy)
+                              ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          }`}
                           onClick={() => toggleQuickAllergy(allergy, field)}
                         >
                           {allergy}
-                        </QuickSelectTag>
+                        </button>
                       ))}
-                    </QuickSelect>
+                    </div>
                     
-                    <CompactLabel style={{ marginTop: '12px' }}>All allergies and intolerances:</CompactLabel>
-                    <CompactCheckboxGroup>
+                    <label className="block mb-1 font-semibold text-gray-700 dark:text-gray-300 text-sm mt-3">
+                      All allergies and intolerances:
+                    </label>
+                    <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 md:grid-cols-3">
                       {ALLERGIES_INTOLERANCES.map((allergy) => (
-                        <CompactCheckboxItem key={allergy}>
-                          <CompactCheckbox
+                        <label key={allergy} className="flex items-center gap-1.5 cursor-pointer p-1.5 px-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm">
+                          <input
+                            type="checkbox"
+                            className="w-3.5 h-3.5 border-2 border-gray-300 dark:border-gray-600 rounded cursor-pointer text-blue-600 focus:ring-blue-500"
                             checked={selectedAllergies.includes(allergy)}
                             onChange={(e) => handleAllergyChange(allergy, e.target.checked, field)}
                           />
-                          <span>{allergy}</span>
-                        </CompactCheckboxItem>
+                          <span className="text-gray-900 dark:text-gray-100">{allergy}</span>
+                        </label>
                       ))}
-                    </CompactCheckboxGroup>
+                    </div>
                   </>
                 )}
               />
 
               {selectedAllergies.includes('Other') && (
-                <CompactFormGroup style={{ marginTop: '12px' }}>
-                  <CompactLabel htmlFor="otherAllergy">Describe your other allergy/intolerance</CompactLabel>
-                  <Input
+                <div className="mt-3">
+                  <label htmlFor="otherAllergy" className="block mb-1 font-semibold text-gray-700 dark:text-gray-300 text-sm">
+                    Describe your other allergy/intolerance
+                  </label>
+                  <input
                     id="otherAllergy"
                     type="text"
                     placeholder="Please specify your other allergy or intolerance..."
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                     {...register('otherAllergy')}
                   />
-                  {errors.otherAllergy && <ErrorMessage>{errors.otherAllergy.message}</ErrorMessage>}
-                </CompactFormGroup>
+                  {errors.otherAllergy && (
+                    <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errors.otherAllergy.message}</p>
+                  )}
+                </div>
               )}
-            </CollapsibleInner>
-          </CollapsibleContent>
-        </CollapsibleSection>
+            </div>
+          </div>
+        </div>
       </form>
-    </CompactContainer>
+    </div>
   );
 };
 
